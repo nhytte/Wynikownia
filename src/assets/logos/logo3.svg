@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="12" fill="#E8F6E8" />
+  <path d="M60 30 L75 70 L45 70 Z" fill="#2E7D32" />
+  <text x="60" y="96" font-size="12" text-anchor="middle" fill="#1B5E20">Orzeł</text>
+</svg>

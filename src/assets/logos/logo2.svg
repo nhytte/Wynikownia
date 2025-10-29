@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="12" fill="#DDEBFF" />
+  <circle cx="60" cy="50" r="28" fill="#4A90E2" />
+  <text x="60" y="86" font-size="12" text-anchor="middle" fill="#03306B">Niebieska</text>
+</svg>

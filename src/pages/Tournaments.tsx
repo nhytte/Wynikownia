@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth0 } from '@auth0/auth0-react'
 import supabase from '../lib/supabaseClient'
 
 type Tournament = {
@@ -14,6 +16,7 @@ type Tournament = {
 }
 
 export default function TournamentsPage() {
+  const { isAuthenticated } = useAuth0()
   const [tournaments, setTournaments] = useState<Tournament[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,7 +45,7 @@ export default function TournamentsPage() {
       const orgIds = Array.from(new Set(rows.map((r) => r.organizator_id).filter(Boolean))) as string[]
       if (orgIds.length > 0) {
         const { data: users, error: usersError } = await supabase
-          .from('Uzytkownicy')
+          .from('uzytkownicy')
           .select('user_id, nazwa_wyswietlana, email')
           .in('user_id', orgIds)
 
@@ -70,7 +73,19 @@ export default function TournamentsPage() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>Turnieje</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h2 style={{ margin: 0 }}>Turnieje</h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {isAuthenticated ? (
+            <>
+              <a href="/create-team"><button>Stwórz swoją drużynę</button></a>
+              <a href="/create-tournament"><button>Zaproponuj turniej</button></a>
+            </>
+          ) : (
+            <div />
+          )}
+        </div>
+      </div>
       {loading ? (
         <p>Ładowanie turniejów…</p>
       ) : !tournaments || tournaments.length === 0 ? (
@@ -79,7 +94,7 @@ export default function TournamentsPage() {
         <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
           {tournaments.map((t) => (
             <article key={t.turniej_id} style={{ border: '1px solid #e6e6e6', borderRadius: 8, padding: 12, boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
-              <h3 style={{ margin: '0 0 6px' }}>{t.nazwa}</h3>
+              <h3 style={{ margin: '0 0 6px' }}><Link to={`/tournaments/${t.turniej_id}`}>{t.nazwa}</Link></h3>
               <div style={{ fontSize: 14, color: '#555', marginBottom: 8 }}>
                 <div><strong>Dyscyplina:</strong> {t.dyscyplina}</div>
                 <div><strong>Typ zapisu:</strong> {t.typ_zapisu}</div>
