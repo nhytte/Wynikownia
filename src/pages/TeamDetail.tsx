@@ -144,10 +144,10 @@ export default function TeamDetail() {
           {team.logo ? (
             (() => {
               const src = getLogoSrc(team.logo)
-              return src ? <img src={src} alt="logo" style={{ width: 160 }} /> : <div style={{ width: 160, height: 160, background: '#f0f0f0' }} />
+              return src ? <img src={src} alt="logo" style={{ width: 160 }} /> : <div style={{ width: 160, height: 160, background: '#f0f0f0', color: '#213547' }} />
             })()
           ) : (
-            <div style={{ width: 160, height: 160, background: '#f0f0f0' }} />
+            <div style={{ width: 160, height: 160, background: '#f0f0f0', color: '#213547' }} />
           )}
         </div>
         <div style={{ flex: 1 }}>

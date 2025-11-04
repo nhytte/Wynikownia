@@ -49,7 +49,6 @@ function App() {
             <Link to="/login"><button>Log in / Register</button></Link>
           )}
         </div>
-  <Link to="/tournaments"><button> Tournaments </button></Link>
   <Link to="/teams"><button> Drużyny </button></Link>
   <Link to="/profile"><button> Profil </button></Link>
   {userRole === 'Administrator' ? <Link to="/admin"><button style={{ marginLeft: 8 }}>Admin</button></Link> : null}

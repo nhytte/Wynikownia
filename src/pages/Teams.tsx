@@ -11,11 +11,12 @@ type Team = {
   dyscyplina: string | null
   owner_id: string | null
   created_at: string | null
+  liczba_czlonkow?: number | null
 }
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([])
-  const [owners, setOwners] = useState<Record<string, string>>({})
+  // owners removed: we don't display Owner/Utworzono in the search results
   const [loading, setLoading] = useState(false)
   const [filterName, setFilterName] = useState('')
   const [filterDyscyplina, setFilterDyscyplina] = useState('')
@@ -32,27 +33,6 @@ export default function TeamsPage() {
       if (error) throw error
       const rows = (data as Team[]) || []
       setTeams(rows)
-
-      // fetch owner display names similar to tournaments page
-      const ownerIds = Array.from(new Set(rows.map((r) => r.owner_id).filter(Boolean))) as string[]
-      if (ownerIds.length > 0) {
-        const { data: users, error: usersError } = await supabase
-          .from('uzytkownicy')
-          .select('user_id, nazwa_wyswietlana, email')
-          .in('user_id', ownerIds)
-
-        if (usersError) {
-          console.warn('Failed to load owners', usersError)
-        } else if (users) {
-          const map: Record<string, string> = {}
-          users.forEach((u: any) => {
-            map[u.user_id] = u.nazwa_wyswietlana || u.email || u.user_id
-          })
-          setOwners(map)
-        }
-      } else {
-        setOwners({})
-      }
     } catch (err) {
       console.error('Fetch teams error', err)
     } finally {
@@ -106,10 +86,9 @@ export default function TeamsPage() {
             <tr>
               <th style={{ borderBottom: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Logo</th>
               <th style={{ borderBottom: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Nazwa</th>
+              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Członków</th>
               <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Dyscyplina</th>
               <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Województwo</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Owner</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Utworzono</th>
             </tr>
           </thead>
           <tbody>
@@ -134,16 +113,22 @@ export default function TeamsPage() {
                         return null
                       }
                     })()
-                    return src ? <img src={src} alt="logo" style={{ width: 48, height: 48, objectFit: 'contain' }} /> : <div style={{ width: 48, height: 48, background: '#f7f7f7' }} />
+                    return src ? <img src={src} alt="logo" style={{ width: 48, height: 48, objectFit: 'contain' }} /> : <div style={{ width: 48, height: 48, background: '#f7f7f7', color: '#213547' }} />
                   })()}
                 </td>
                 <td style={{ padding: 8 }}>
                   <Link to={`/teams/${t.druzyna_id}`}>{t.nazwa_druzyny}</Link>
                 </td>
+                <td style={{ padding: 8, textAlign: 'center' }}>
+                  {(() => {
+                    const count = t.liczba_czlonkow ?? 0
+                    if (t.dyscyplina === 'Pilka nozna') return `${count}/16`
+                    return `${count}`
+                  })()}
+                </td>
                 <td style={{ padding: 8 }}>{t.dyscyplina}</td>
                 <td style={{ padding: 8 }}>{t.wojewodztwo}</td>
-                <td style={{ padding: 8 }}>{owners[t.owner_id ?? ''] ?? t.owner_id}</td>
-                <td style={{ padding: 8 }}>{t.created_at ? new Date(t.created_at).toLocaleString() : ''}</td>
+                {/* Owner and created columns removed */}
               </tr>
             ))}
           </tbody>

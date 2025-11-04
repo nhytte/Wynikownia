@@ -158,7 +158,7 @@ export default function CreateTeamPage() {
           Dyscyplina
           <select value={dyscyplina} onChange={(e) => setDyscyplina(e.target.value)} style={{ width: '100%', padding: 8 }}>
             <option value="Pilka nozna">Piłka nożna</option>
-            <option value="Szachy">Szachy</option>
+            {/* Szachy nie obsługuje drużyn — nie pokazujemy tej opcji */}
           </select>
         </label>
 

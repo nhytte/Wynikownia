@@ -30,6 +30,19 @@ export default function AdminPanel() {
   // proposals
   const [proposals, setProposals] = useState<any[]>([])
   const [loadingProposals, setLoadingProposals] = useState(false)
+  // proposal review modal
+  const [reviewing, setReviewing] = useState<any | null>(null)
+  // tournament view modal
+  const [viewingTournament, setViewingTournament] = useState<any | null>(null)
+  // team view modal
+  const [viewingTeam, setViewingTeam] = useState<any | null>(null)
+  const [teamMembers, setTeamMembers] = useState<any[]>([])
+  const [loadingMembers, setLoadingMembers] = useState(false)
+  // cache for user display names
+  const [userNames, setUserNames] = useState<Record<string, string>>({})
+  // filters for tournaments
+  const [filterDiscipline, setFilterDiscipline] = useState<'All' | 'Pilka nozna' | 'Szachy'>('All')
+  const [filterStatus, setFilterStatus] = useState<'All' | 'aktualne' | 'w_trakcie' | 'archiwalne'>('All')
 
   useEffect(() => {
     const fetchRole = async () => {
@@ -83,7 +96,10 @@ export default function AdminPanel() {
     setLoadingTournaments(true)
     try {
       const { data } = await supabase.from('turnieje').select('*').order('data_rozpoczecia', { ascending: false })
-      setTournaments((data as any[]) || [])
+      const rows = (data as any[]) || []
+      setTournaments(rows)
+      const ids = Array.from(new Set(rows.map((r: any) => r.organizator_id).filter(Boolean))) as string[]
+      if (ids.length) await ensureUserNames(ids)
     } catch (e) {
       console.error(e)
     } finally {
@@ -94,12 +110,38 @@ export default function AdminPanel() {
   const loadProposals = async () => {
     setLoadingProposals(true)
     try {
-      const { data } = await supabase.from('propozycjeturniejow').select('*').order('created_at', { ascending: false })
-      setProposals((data as any[]) || [])
+      const { data } = await supabase
+        .from('propozycjeturniejow')
+        .select('*')
+        .eq('status', 'Nowa')
+        .order('created_at', { ascending: false })
+      const rows = (data as any[]) || []
+      setProposals(rows)
+      const ids = Array.from(new Set(rows.map((r: any) => r.sugerowany_przez_user_id).filter(Boolean))) as string[]
+      if (ids.length) await ensureUserNames(ids)
     } catch (e) {
       console.error(e)
     } finally {
       setLoadingProposals(false)
+    }
+  }
+
+  const ensureUserNames = async (ids: string[]) => {
+    const missing = ids.filter((id) => !(id in userNames))
+    if (missing.length === 0) return
+    try {
+      const { data, error } = await supabase
+        .from('uzytkownicy')
+        .select('user_id, nazwa_wyswietlana, email')
+        .in('user_id', missing)
+      if (error) throw error
+      const map: Record<string, string> = {}
+      ;(data as any[] || []).forEach((u) => {
+        map[u.user_id] = u.nazwa_wyswietlana || u.email || u.user_id
+      })
+      setUserNames((prev) => ({ ...prev, ...map }))
+    } catch (e) {
+      console.warn('Could not resolve user names', e)
     }
   }
 
@@ -117,6 +159,27 @@ export default function AdminPanel() {
     } catch (e) {
       console.error(e)
       alert('Usuwanie drużyny nie powiodło się')
+    }
+  }
+
+  const openTeamDetails = async (team: any) => {
+    setViewingTeam(team)
+    setLoadingMembers(true)
+    try {
+      const { data, error } = await supabase
+        .from('teammembers')
+        .select('user_id, status, role, requested_at, responded_at')
+        .eq('druzyna_id', team.druzyna_id)
+      if (error) throw error
+      const rows = (data as any[]) || []
+      setTeamMembers(rows)
+      const ids = Array.from(new Set(rows.map((r) => r.user_id))) as string[]
+      if (ids.length) await ensureUserNames(ids)
+    } catch (e) {
+      console.error('Failed to load team members', e)
+      setTeamMembers([])
+    } finally {
+      setLoadingMembers(false)
     }
   }
 
@@ -185,9 +248,20 @@ export default function AdminPanel() {
       const insertPayload: any = {
         nazwa: p.sugerowana_nazwa,
         dyscyplina: p.sugerowana_dyscyplina,
-        typ_zapisu: 'Drużynowy', // default; proposals don't carry typ_zapisu currently
+        // respect the suggested type, but force individual for chess if not provided
+        typ_zapisu: p.sugerowany_typ_zapisu || (p.sugerowana_dyscyplina === 'Szachy' ? 'Indywidualny' : 'Drużynowy'),
         lokalizacja: p.sugerowana_lokalizacja,
+        wojewodztwo: p.sugerowana_wojewodztwo || null,
+        szczegolowa_lokalizacja: p.sugerowana_szczegolowa_lokalizacja,
+        dokladne_miejsce: p.sugerowane_dokladne_miejsce,
         data_rozpoczecia: p.sugerowana_data_rozpoczecia,
+        czas_rozpoczecia: p.sugerowany_czas_rozpoczecia,
+        czas_zakonczenia: p.sugerowany_czas_zakonczenia,
+        data_zamkniecia_zapisow: p.sugerowana_data_zamkniecia_zapisow,
+        opis_turnieju: p.dodatkowy_opis,
+        format_rozgrywek: p.sugerowany_format_rozgrywek,
+        dlugosc_meczy: p.sugerowana_dlugosc_meczy,
+        max_uczestnikow: p.sugerowany_max_uczestnikow,
         organizator_id: p.sugerowany_przez_user_id
       }
       const { error: insErr } = await supabase.from('turnieje').insert(insertPayload)
@@ -251,6 +325,7 @@ export default function AdminPanel() {
                     </td>
                     <td style={{ padding: 8 }}>{t.dyscyplina}</td>
                     <td style={{ padding: 8 }}>
+                      <button onClick={() => openTeamDetails(t)} style={{ marginRight: 8 }}>Przejrzyj</button>
                       <button onClick={() => deleteTeam(t.druzyna_id)} style={{ background: '#c62828', color: 'white', border: 'none', padding: '6px 8px', borderRadius: 4 }}>Usuń</button>
                     </td>
                   </tr>
@@ -258,6 +333,126 @@ export default function AdminPanel() {
               </tbody>
             </table>
           )}
+        </div>
+      )}
+      {viewingTeam && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: '#fff', color: '#111', width: 'min(900px, 96vw)', maxHeight: '90vh', overflow: 'auto', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}>
+            <div style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Szczegóły drużyny</h3>
+              <button onClick={() => setViewingTeam(null)} style={{ padding: '6px 10px' }}>Zamknij</button>
+            </div>
+            <div style={{ padding: 16, display: 'grid', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 10 }}>
+                <div style={{ fontWeight: 600 }}>Nazwa</div>
+                <div>{viewingTeam.nazwa_druzyny || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Dyscyplina</div>
+                <div>{viewingTeam.dyscyplina || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Województwo</div>
+                <div>{viewingTeam.wojewodztwo || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Właściciel</div>
+                <div>{(userNames[viewingTeam.owner_id] || '-') + (viewingTeam.owner_id ? ` (${viewingTeam.owner_id})` : '')}</div>
+
+                <div style={{ fontWeight: 600 }}>Utworzono</div>
+                <div>{viewingTeam.created_at ? new Date(viewingTeam.created_at).toLocaleString('pl-PL') : '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Opis</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{viewingTeam.opis || '-'}</div>
+              </div>
+
+              <div style={{ marginTop: 8 }}>
+                <h4 style={{ margin: '8px 0' }}>Członkowie</h4>
+                {loadingMembers ? (
+                  <div>Ładowanie członków…</div>
+                ) : teamMembers.length === 0 ? (
+                  <div>Brak członków</div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left', padding: 8 }}>Użytkownik</th>
+                        <th style={{ textAlign: 'left', padding: 8 }}>Rola</th>
+                        <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teamMembers.map((m) => (
+                        <tr key={m.user_id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: 8 }}>{(userNames[m.user_id] || m.user_id) + ` (${m.user_id})`}</td>
+                          <td style={{ padding: 8 }}>{m.role || '-'}</td>
+                          <td style={{ padding: 8 }}>{m.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {viewingTournament && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: '#fff', color: '#111', width: 'min(900px, 96vw)', maxHeight: '90vh', overflow: 'auto', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}>
+            <div style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Szczegóły turnieju</h3>
+              <button onClick={() => setViewingTournament(null)} style={{ padding: '6px 10px' }}>Zamknij</button>
+            </div>
+            <div style={{ padding: 16, display: 'grid', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 10 }}>
+                <div style={{ fontWeight: 600 }}>Nazwa</div>
+                <div>{viewingTournament.nazwa || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Dyscyplina</div>
+                <div>{viewingTournament.dyscyplina || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Typ zapisu</div>
+                <div>{viewingTournament.typ_zapisu || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Województwo</div>
+                <div>{viewingTournament.wojewodztwo || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Lokalizacja (miejscowość)</div>
+                <div>{viewingTournament.lokalizacja || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Szczegółowa lokalizacja</div>
+                <div>{viewingTournament.szczegolowa_lokalizacja || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Dokładne miejsce</div>
+                <div>{viewingTournament.dokladne_miejsce || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Data rozpoczęcia</div>
+                <div>{viewingTournament.data_rozpoczecia ? new Date(viewingTournament.data_rozpoczecia).toLocaleDateString('pl-PL') : '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Godzina rozpoczęcia</div>
+                <div>{viewingTournament.czas_rozpoczecia || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Godzina zakończenia</div>
+                <div>{viewingTournament.czas_zakonczenia || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Data zamknięcia zapisów</div>
+                <div>{viewingTournament.data_zamkniecia_zapisow ? new Date(viewingTournament.data_zamkniecia_zapisow).toLocaleString('pl-PL') : '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Format rozgrywek</div>
+                <div>{viewingTournament.format_rozgrywek || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Długość meczy</div>
+                <div>{viewingTournament.dlugosc_meczy || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Maksymalna liczba</div>
+                <div>{viewingTournament.max_uczestnikow ?? '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Organizator</div>
+                <div>{(userNames[viewingTournament.organizator_id] || '-') + (viewingTournament.organizator_id ? ` (${viewingTournament.organizator_id})` : '')}</div>
+
+                <div style={{ fontWeight: 600 }}>Opis</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{viewingTournament.opis_turnieju || '-'}</div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -294,6 +489,25 @@ export default function AdminPanel() {
       {activeTab === 'tournaments' && (
         <div>
           <h3>Turnieje</h3>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', margin: '8px 0 16px' }}>
+            <label>
+              Dyscyplina:
+              <select value={filterDiscipline} onChange={(e) => setFilterDiscipline(e.target.value as any)} style={{ marginLeft: 8 }}>
+                <option value="All">Wszystkie</option>
+                <option value="Pilka nozna">Piłka nożna</option>
+                <option value="Szachy">Szachy</option>
+              </select>
+            </label>
+            <label>
+              Status:
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)} style={{ marginLeft: 8 }}>
+                <option value="All">Wszystkie</option>
+                <option value="aktualne">Aktualne</option>
+                <option value="w_trakcie">W trakcie</option>
+                <option value="archiwalne">Archiwalne</option>
+              </select>
+            </label>
+          </div>
               {loadingProposals ? <p>Ładowanie propozycji…</p> : proposals && proposals.length > 0 ? (
                 <div style={{ marginBottom: 12 }}>
                   <h4>Propozycje turniejów</h4>
@@ -302,6 +516,7 @@ export default function AdminPanel() {
                       <tr>
                         <th style={{ textAlign: 'left', padding: 8 }}>Nazwa</th>
                         <th style={{ textAlign: 'left', padding: 8 }}>Dyscyplina</th>
+                        <th style={{ textAlign: 'left', padding: 8 }}>Województwo</th>
                         <th style={{ padding: 8 }}>Status</th>
                         <th style={{ padding: 8 }}>Akcje</th>
                       </tr>
@@ -311,10 +526,10 @@ export default function AdminPanel() {
                         <tr key={p.propozycja_id} style={{ borderBottom: '1px solid #eee' }}>
                           <td style={{ padding: 8 }}>{p.sugerowana_nazwa}</td>
                           <td style={{ padding: 8 }}>{p.sugerowana_dyscyplina}</td>
+                          <td style={{ padding: 8 }}>{p.sugerowana_wojewodztwo || '-'}</td>
                           <td style={{ padding: 8 }}>{p.status}</td>
                           <td style={{ padding: 8 }}>
-                            <button onClick={() => approveProposal(p.propozycja_id)} style={{ marginRight: 8 }}>Akceptuj</button>
-                            <button onClick={() => rejectProposal(p.propozycja_id)}>Odrzuć</button>
+                            <button onClick={() => setReviewing(p)}>Przejrzyj</button>
                           </td>
                         </tr>
                       ))}
@@ -333,19 +548,104 @@ export default function AdminPanel() {
                 </tr>
               </thead>
               <tbody>
-                {tournaments.map(t => (
+                {(() => {
+                  const now = new Date()
+                  const filtered = (tournaments || []).filter((t: any) => {
+                    if (filterDiscipline !== 'All' && t.dyscyplina !== filterDiscipline) return false
+                    if (filterStatus === 'All') return true
+                    const start = t.data_rozpoczecia ? new Date(t.data_rozpoczecia) : null
+                    if (!start) return false
+                    const sameDay = start.toDateString() === now.toDateString()
+                    let st: 'aktualne' | 'w_trakcie' | 'archiwalne'
+                    if (start > now) st = 'aktualne'
+                    else if (sameDay) st = 'w_trakcie'
+                    else st = 'archiwalne'
+                    return st === filterStatus
+                  })
+                  return filtered.map((t: any) => (
                   <tr key={t.turniej_id} style={{ borderBottom: '1px solid #eee' }}>
                     <td style={{ padding: 8 }}>{t.nazwa}</td>
                     <td style={{ padding: 8 }}>{t.dyscyplina}</td>
                     <td style={{ padding: 8 }}>{t.data_rozpoczecia ? new Date(t.data_rozpoczecia).toLocaleString() : ''}</td>
                     <td style={{ padding: 8 }}>
+                      <button onClick={() => setViewingTournament(t)} style={{ marginRight: 8 }}>Przejrzyj</button>
                       <button onClick={() => deleteTournament(t.turniej_id)} style={{ background: '#c62828', color: 'white', border: 'none', padding: '6px 8px', borderRadius: 4 }}>Usuń</button>
                     </td>
                   </tr>
-                ))}
+                  ))
+                })()}
               </tbody>
             </table>
           )}
+        </div>
+      )}
+      {reviewing && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: '#fff', color: '#111', width: 'min(860px, 96vw)', maxHeight: '90vh', overflow: 'auto', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}>
+            <div style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Przejrzyj propozycję turnieju</h3>
+              <button onClick={() => setReviewing(null)} style={{ padding: '6px 10px' }}>Zamknij</button>
+            </div>
+            <div style={{ padding: 16, display: 'grid', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 10 }}>
+                <div style={{ fontWeight: 600 }}>Nazwa</div>
+                <div>{reviewing.sugerowana_nazwa || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Dyscyplina</div>
+                <div>{reviewing.sugerowana_dyscyplina || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Typ zapisu</div>
+                <div>{reviewing.sugerowany_typ_zapisu || (reviewing.sugerowana_dyscyplina === 'Szachy' ? 'Indywidualny' : 'Drużynowy')}</div>
+
+                <div style={{ fontWeight: 600 }}>Województwo</div>
+                <div>{reviewing.sugerowana_wojewodztwo || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Lokalizacja (miejscowość)</div>
+                <div>{reviewing.sugerowana_lokalizacja || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Szczegółowa lokalizacja</div>
+                <div>{reviewing.sugerowana_szczegolowa_lokalizacja || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Dokładne miejsce</div>
+                <div>{reviewing.sugerowane_dokladne_miejsce || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Data rozpoczęcia</div>
+                <div>{reviewing.sugerowana_data_rozpoczecia ? new Date(reviewing.sugerowana_data_rozpoczecia).toLocaleDateString('pl-PL') : '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Godzina rozpoczęcia</div>
+                <div>{reviewing.sugerowany_czas_rozpoczecia || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Godzina zakończenia</div>
+                <div>{reviewing.sugerowany_czas_zakonczenia || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Data zamknięcia zapisów</div>
+                <div>{reviewing.sugerowana_data_zamkniecia_zapisow ? new Date(reviewing.sugerowana_data_zamkniecia_zapisow).toLocaleString('pl-PL') : '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Format rozgrywek</div>
+                <div>{reviewing.sugerowany_format_rozgrywek || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Długość meczy</div>
+                <div>{reviewing.sugerowana_dlugosc_meczy || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>{reviewing.sugerowana_dyscyplina === 'Szachy' ? 'Maks. uczestników' : 'Maks. drużyn'}</div>
+                <div>{reviewing.sugerowany_max_uczestnikow ?? '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Opis</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{reviewing.dodatkowy_opis || '-'}</div>
+
+                <div style={{ fontWeight: 600 }}>Zgłaszający</div>
+                <div>{(userNames[reviewing.sugerowany_przez_user_id] || '-') + (reviewing.sugerowany_przez_user_id ? ` (${reviewing.sugerowany_przez_user_id})` : '')}</div>
+
+                <div style={{ fontWeight: 600 }}>Data zgłoszenia</div>
+                <div>{reviewing.created_at ? new Date(reviewing.created_at).toLocaleString('pl-PL') : '-'}</div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                <button onClick={() => rejectProposal(reviewing.propozycja_id)} style={{ background: '#e74c3c', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: 6 }}>Odrzuć</button>
+                <button onClick={() => approveProposal(reviewing.propozycja_id)} style={{ background: '#2ecc71', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: 6 }}>Akceptuj</button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
