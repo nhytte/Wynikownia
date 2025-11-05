@@ -24,6 +24,81 @@ export default function CreateTournament() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
+  const randomize = () => {
+    // pools
+    const names = [
+      'Puchar Jesieni', 'Letnia Liga', 'Turniej Mikołajkowy', 'Grand Prix Miasta', 'Weekendowy Puchar',
+      'Open Cup', 'Liga Orlik', 'Mistrzostwa Szkolne', 'Turniej Amatorski', 'Puchar Wojewódzki'
+    ]
+    const cities = ['Warszawa', 'Kraków', 'Gdańsk', 'Poznań', 'Wrocław', 'Łódź', 'Lublin', 'Szczecin', 'Białystok', 'Katowice', 'Rzeszów', 'Bydgoszcz']
+    const voivodes = [
+      'Dolnośląskie','Kujawsko-pomorskie','Lubelskie','Lubuskie','Łódzkie','Małopolskie','Mazowieckie','Opolskie','Podkarpackie','Podlaskie','Pomorskie','Śląskie','Świętokrzyskie','Warmińsko-mazurskie','Wielkopolskie','Zachodniopomorskie'
+    ]
+    const footballDur = ['2x10 min','2x12 min','2x15 min','2x20 min','1x30 min']
+    const chessDur = ['10+0','15+10','25+5','90+30']
+  const formats = ['Pucharowy','Liga']
+    const rand = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)]
+    const rndInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
+
+    // discipline
+    const d = Math.random() < 0.5 ? 'Pilka nozna' : 'Szachy'
+    setDyscyplina(d)
+
+    // base name with suffix
+    const base = rand(names)
+    const suffix = ` ${new Date().getFullYear()} #${rndInt(1, 999)}`
+    setNazwa(`${base}${suffix}`)
+
+    // location
+    const city = rand(cities)
+    setLokalizacja(city)
+    setWojewodztwo(rand(voivodes))
+    setSzczegolowaLokalizacja(`${city}, ul. Sportowa ${rndInt(1, 200)}`)
+    setDokladneMiejsce(Math.random() < 0.5 ? 'Hala sportowa' : 'Boisko szkolne')
+
+    // date/time: start in next 7-40 days; close registration 2-5 days earlier
+    const start = new Date()
+    start.setDate(start.getDate() + rndInt(7, 40))
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const y = start.getFullYear()
+    const m = pad(start.getMonth() + 1)
+    const dDay = pad(start.getDate())
+    setDataRozp(`${y}-${m}-${dDay}`)
+    // time between 09:00-20:00
+    const hrStart = rndInt(9, 18)
+    const minStart = [0, 15, 30, 45][rndInt(0, 3)]
+    setCzasRozp(`${pad(hrStart)}:${pad(minStart)}`)
+    const hrEnd = Math.min(21, hrStart + rndInt(1, 4))
+    const minEnd = [0, 15, 30, 45][rndInt(0, 3)]
+    setCzasZak(`${pad(hrEnd)}:${pad(minEnd)}`)
+    const close = new Date(start)
+    close.setDate(start.getDate() - rndInt(2, 5))
+    close.setHours(hrStart, minStart, 0, 0)
+    const cy = close.getFullYear(); const cm = pad(close.getMonth() + 1); const cd = pad(close.getDate()); const ch = pad(close.getHours()); const cmin = pad(close.getMinutes())
+    setDataZamkniecia(`${cy}-${cm}-${cd}T${ch}:${cmin}`)
+
+    // format & length & capacity
+  const fmt = rand(formats)
+  // For football use selected format, for chess we will ignore and send null
+  setFormatRozgrywek(fmt)
+    if (d === 'Pilka nozna') {
+      setTypZapisu('Drużynowy')
+      setDlugoscMeczy(rand(footballDur))
+      setMaxUczestnikow(String(rndInt(4, 16) * 2)) // 8..32 even
+    } else {
+      setTypZapisu('Indywidualny')
+      setDlugoscMeczy(rand(chessDur))
+      setMaxUczestnikow(String(rndInt(16, 100)))
+    }
+
+    // description
+    setOpis(
+      d === 'Pilka nozna'
+  ? 'Amatorski turniej piłki nożnej. Zasady fair play, brak ostrych wślizgów, mecze w systemie ' + fmt + '.'
+  : 'Otwarty turniej szachowy. Ranking nieobowiązkowy, tempo gry: ' + (d === 'Szachy' ? chessDur[0] : '') + '. System: ' + fmt + '.'
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isAuthenticated || !user) return navigate('/login')
@@ -40,12 +115,13 @@ export default function CreateTournament() {
         sugerowane_dokladne_miejsce: dokladne_miejsce,
           // ensure chess proposals are individual-only
           sugerowany_typ_zapisu: dyscyplina === 'Szachy' ? 'Indywidualny' : typZapisu,
-        sugerowana_data_rozpoczecia: dataRozp ? new Date(dataRozp) : null,
+        // send raw local strings so Postgres TIMESTAMP stores exactly user's local date/time (no timezone shift)
+        sugerowana_data_rozpoczecia: dataRozp || null, // YYYY-MM-DD
         sugerowany_czas_rozpoczecia: czasRozp,
         sugerowany_czas_zakonczenia: czasZak,
-        sugerowana_data_zamkniecia_zapisow: dataZamkniecia ? new Date(dataZamkniecia) : null,
+        sugerowana_data_zamkniecia_zapisow: dataZamkniecia || null, // YYYY-MM-DDTHH:mm (local)
         dodatkowy_opis: opis,
-        sugerowany_format_rozgrywek: formatRozgrywek,
+  sugerowany_format_rozgrywek: dyscyplina === 'Szachy' ? null : formatRozgrywek,
         sugerowana_dlugosc_meczy: dlugoscMeczy,
         sugerowany_max_uczestnikow: maxUczestnikow ? parseInt(maxUczestnikow) : null,
         status: 'Nowa'
@@ -167,14 +243,15 @@ export default function CreateTournament() {
           <input type="datetime-local" value={dataZamkniecia} onChange={(e) => setDataZamkniecia(e.target.value)} style={{ width: '100%', padding: 8 }} />
         </label>
 
-        <label>
-          Format rozgrywek
-          <select value={formatRozgrywek} onChange={(e) => setFormatRozgrywek(e.target.value)} style={{ width: '100%', padding: 8 }}>
-            <option value="Pucharowy">Pucharowy</option>
-            <option value="Liga">Liga</option>
-            <option value="Towarzyski">Towarzyski</option>
-          </select>
-        </label>
+        {dyscyplina !== 'Szachy' && (
+          <label>
+            Format rozgrywek
+            <select value={formatRozgrywek} onChange={(e) => setFormatRozgrywek(e.target.value)} style={{ width: '100%', padding: 8 }}>
+              <option value="Pucharowy">Pucharowy</option>
+              <option value="Liga">Liga</option>
+            </select>
+          </label>
+        )}
 
         <label>
           {dyscyplina === 'Szachy' ? 'Maksymalna liczba uczestników' : 'Maksymalna liczba drużyn'}
@@ -210,7 +287,8 @@ export default function CreateTournament() {
             placeholder="Szczegółowy opis turnieju, zasady, wymagania, system rozgrywek..." />
         </label>
 
-        <div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" onClick={randomize} style={{ padding: '8px 12px', background: '#0ea5e9', color: '#001024', border: 'none', borderRadius: 6 }}>Wypełnij losowo</button>
           <button type="submit" disabled={loading} style={{ padding: '8px 12px' }}>{loading ? 'Wysyłanie…' : 'Zaproponuj turniej'}</button>
         </div>
       </form>

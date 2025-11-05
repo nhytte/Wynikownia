@@ -3,9 +3,12 @@ import { useAuth0 } from '@auth0/auth0-react'
 import supabase from '../lib/supabaseClient'
 import { deriveProvince } from '../lib/province'
 import { Link } from 'react-router-dom'
+import { emailLocal } from '../lib/displayName'
 
 export default function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuth0()
+  const [saving, setSaving] = useState(false)
+  const [profile, setProfile] = useState<{ imie?: string; nazwisko?: string; nazwa_wyswietlana?: string } | null>(null)
   const [ownedTeams, setOwnedTeams] = useState<any[]>([])
   const [memberOf, setMemberOf] = useState<any[]>([])
   const [played, setPlayed] = useState<any[]>([])
@@ -16,6 +19,10 @@ export default function ProfilePage() {
     
     const uid = (user as any).sub
     try {
+      // fetch profile data
+      const { data: u } = await supabase.from('uzytkownicy').select('imie, nazwisko, nazwa_wyswietlana, email').eq('user_id', uid).maybeSingle()
+      if (u) setProfile({ imie: u.imie ?? '', nazwisko: u.nazwisko ?? '', nazwa_wyswietlana: u.nazwa_wyswietlana ?? '' })
+
       const { data: owned } = await supabase.from('druzyny').select('*').eq('owner_id', uid)
       setOwnedTeams((owned as any[]) || [])
 
@@ -74,12 +81,52 @@ export default function ProfilePage() {
           { (user as any)?.picture ? <img src={(user as any).picture} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: 48, height: 48, background: '#152026' }} /> }
         </div>
         <div style={{ flex: 1 }}>
-          <h2 style={{ margin: 0 }}>{(user as any)?.name || (user as any)?.email}</h2>
+          <h2 style={{ margin: 0 }}>{profile?.nazwa_wyswietlana || ((profile?.imie || profile?.nazwisko) ? `${profile?.imie ?? ''} ${profile?.nazwisko ?? ''}`.trim() : '') || emailLocal((user as any)?.email)}</h2>
         </div>
         <div>
           <button onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} style={{ padding: '8px 12px' }}>Wyloguj</button>
         </div>
       </header>
+
+      <section style={{ marginBottom: 18 }}>
+        <h3>Twoje dane</h3>
+        <div style={{ display: 'grid', gap: 8, maxWidth: 420 }}>
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span>Imię</span>
+            <input value={profile?.imie ?? ''} onChange={(e) => setProfile((p: any) => ({ ...(p || {}), imie: e.target.value }))} style={{ padding: 8 }} />
+          </label>
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span>Nazwisko</span>
+            <input value={profile?.nazwisko ?? ''} onChange={(e) => setProfile((p: any) => ({ ...(p || {}), nazwisko: e.target.value }))} style={{ padding: 8 }} />
+          </label>
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span>Nazwa wyświetlana</span>
+            <input value={profile?.nazwa_wyswietlana ?? ''} onChange={(e) => setProfile((p: any) => ({ ...(p || {}), nazwa_wyswietlana: e.target.value }))} style={{ padding: 8 }} />
+          </label>
+          <div>
+            <button disabled={saving} onClick={async () => {
+              if (!user) return
+              setSaving(true)
+              try {
+                const uid = (user as any).sub
+                const payload: any = {
+                  imie: profile?.imie ?? null,
+                  nazwisko: profile?.nazwisko ?? null,
+                  nazwa_wyswietlana: profile?.nazwa_wyswietlana ?? null,
+                }
+                const { error } = await supabase.from('uzytkownicy').update(payload).eq('user_id', uid)
+                if (error) throw error
+                alert('Zapisano')
+              } catch (e) {
+                console.error(e)
+                alert('Nie udało się zapisać danych')
+              } finally {
+                setSaving(false)
+              }
+            }}>Zapisz</button>
+          </div>
+        </div>
+      </section>
 
       <section style={{ marginBottom: 18 }}>
         <h3>Drużyny, do których należysz</h3>

@@ -12,20 +12,25 @@ import AdminPanel from './pages/AdminPanel'
 import CreateTournament from './pages/CreateTournament'
 import { useAuth0 } from '@auth0/auth0-react'
 import supabase from './lib/supabaseClient'
+import { emailLocal } from './lib/displayName'
 
 function App() {
   const { isAuthenticated, isLoading, user, logout } = useAuth0()
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [userFullName, setUserFullName] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchRole = async () => {
       if (!isAuthenticated || !user) { setUserRole(null); return }
       try {
         const uid = (user as any).sub
-        const { data } = await supabase.from('uzytkownicy').select('rola').eq('user_id', uid).single()
+        const { data } = await supabase.from('uzytkownicy').select('rola, imie, nazwisko, nazwa_wyswietlana, email').eq('user_id', uid).single()
         setUserRole(data?.rola ?? null)
+        const full = ((data?.imie || '') + ' ' + (data?.nazwisko || '')).trim()
+        setUserFullName(data?.nazwa_wyswietlana || (full.length ? full : null) || null)
       } catch (e) {
         setUserRole(null)
+        setUserFullName(null)
       }
     }
     fetchRole()
@@ -42,7 +47,7 @@ function App() {
             <span>Loading...</span>
           ) : isAuthenticated ? (
             <>
-              <span style={{ marginRight: 8 }}>{(user as any)?.name || (user as any)?.email}</span>
+              <span style={{ marginRight: 8 }}>{userFullName || (user as any)?.name || emailLocal((user as any)?.email)}</span>
               <button onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>Log out</button>
             </>
           ) : (

@@ -25,6 +25,7 @@ export default function AuthProvider({ children }: Props) {
       authorizationParams={{
         // Use universal login (redirect) and return to origin
         redirect_uri: window.location.origin,
+        scope: 'openid profile email',
       }}
       useRefreshTokens={true}
       cacheLocation="localstorage"
@@ -44,23 +45,40 @@ function AuthSync() {
 
     const userId = (user as any).sub
     const email = (user as any).email
-    const displayName = (user as any).name || (user as any).nickname || null
+  const name = (user as any).name || null
+  const givenName = (user as any).given_name || (name ? String(name).split(' ')[0] : null)
+  const familyName = (user as any).family_name || (name && String(name).includes(' ') ? String(name).split(' ').slice(1).join(' ') : null)
+  const displayName = name || (user as any).nickname || null
 
     if (!userId) return
 
     ;(async () => {
       try {
-        // Upsert user into `Uzytkownicy`. Do not overwrite `rola` if present.
-        const { error } = await supabase.from('uzytkownicy').upsert(
-          {
+        // Sync with `uzytkownicy` without overwriting user's manual edits.
+        const { data: existing } = await supabase.from('uzytkownicy').select('*').eq('user_id', userId).maybeSingle()
+        if (!existing) {
+          const { error: insErr } = await supabase.from('uzytkownicy').insert({
             user_id: userId,
             email: email,
             nazwa_wyswietlana: displayName,
-          },
-          { onConflict: 'user_id' },
-        )
-        if (error) console.error('Failed to upsert user in Supabase:', error)
-        else console.debug('Upserted user in Supabase:', userId)
+            imie: givenName,
+            nazwisko: familyName,
+          })
+          if (insErr) console.error('Failed to insert user in Supabase:', insErr)
+          else console.debug('Inserted user in Supabase:', userId)
+        } else {
+          const updates: any = {}
+          if (email && email !== existing.email) updates.email = email
+          // only fill empty fields from Auth0
+          if ((!existing.imie || existing.imie.trim() === '') && givenName) updates.imie = givenName
+          if ((!existing.nazwisko || existing.nazwisko.trim() === '') && familyName) updates.nazwisko = familyName
+          if ((!existing.nazwa_wyswietlana || existing.nazwa_wyswietlana.trim() === '') && displayName) updates.nazwa_wyswietlana = displayName
+          if (Object.keys(updates).length > 0) {
+            const { error: updErr } = await supabase.from('uzytkownicy').update(updates).eq('user_id', userId)
+            if (updErr) console.error('Failed to update user in Supabase:', updErr)
+            else console.debug('Updated user in Supabase:', userId, Object.keys(updates))
+          }
+        }
       } catch (err) {
         console.error('Error syncing user to Supabase', err)
       }

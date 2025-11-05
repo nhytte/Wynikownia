@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import supabase from '../lib/supabaseClient'
+import { emailLocal } from '../lib/displayName'
 import { useAuth0 } from '@auth0/auth0-react'
 import { getLogoSrc } from '../lib/logoMap'
 
@@ -40,7 +41,7 @@ export default function TeamDetail() {
         try {
           const { data: ownerUser } = await supabase.from('uzytkownicy').select('user_id, nazwa_wyswietlana, email').eq('user_id', teamData.owner_id).single()
           if (ownerUser) {
-            setOwnerName(ownerUser.nazwa_wyswietlana || ownerUser.email || ownerUser.user_id)
+            setOwnerName(ownerUser.nazwa_wyswietlana || emailLocal(ownerUser.email) || ownerUser.user_id)
           }
         } catch (e) {
           // ignore
@@ -48,12 +49,12 @@ export default function TeamDetail() {
       }
 
       // members (accepted)
-      const { data: membersData } = await supabase.from('teammembers').select('*, uzytkownicy(nazwa_wyswietlana, email)').eq('druzyna_id', Number(id)).eq('status', 'accepted')
+  const { data: membersData } = await supabase.from('teammembers').select('*, uzytkownicy(nazwa_wyswietlana, imie, nazwisko, email)').eq('druzyna_id', Number(id)).eq('status', 'accepted')
       setMembers((membersData as any[]) || [])
 
       // pending join requests for this team
       try {
-        const { data: reqs } = await supabase.from('teammembers').select('*, uzytkownicy(nazwa_wyswietlana, email)').eq('druzyna_id', Number(id)).eq('status', 'pending')
+  const { data: reqs } = await supabase.from('teammembers').select('*, uzytkownicy(nazwa_wyswietlana, imie, nazwisko, email)').eq('druzyna_id', Number(id)).eq('status', 'pending')
         setPendingRequests((reqs as any[]) || [])
       } catch (e) {
         setPendingRequests([])
@@ -192,7 +193,7 @@ export default function TeamDetail() {
       <ul>
         {members.map((m) => (
           <li key={m.member_id}>
-            {m.uzytkownicy?.nazwa_wyswietlana || m.user_id}
+            {m.uzytkownicy?.nazwa_wyswietlana || ((m.uzytkownicy?.imie || m.uzytkownicy?.nazwisko) ? `${m.uzytkownicy?.imie ?? ''} ${m.uzytkownicy?.nazwisko ?? ''}`.trim() : '') || emailLocal(m.uzytkownicy?.email) || m.user_id}
             {isAuthenticated && (user as any).sub === team?.owner_id ? (
               <button onClick={async () => {
                 if (!confirm('Na pewno usunąć tego użytkownika z drużyny?')) return
@@ -225,7 +226,7 @@ export default function TeamDetail() {
           <tbody>
             {pendingRequests.map((r) => (
               <tr key={r.member_id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: 8 }}>{r.uzytkownicy?.nazwa_wyswietlana || r.user_id}</td>
+                <td style={{ padding: 8 }}>{r.uzytkownicy?.nazwa_wyswietlana || ((r.uzytkownicy?.imie || r.uzytkownicy?.nazwisko) ? `${r.uzytkownicy?.imie ?? ''} ${r.uzytkownicy?.nazwisko ?? ''}`.trim() : '') || emailLocal(r.uzytkownicy?.email) || r.user_id}</td>
                 <td style={{ padding: 8 }}>{r.uzytkownicy?.email || ''}</td>
                 <td style={{ padding: 8 }}>
                   {isAuthenticated && (user as any).sub === team?.owner_id ? (

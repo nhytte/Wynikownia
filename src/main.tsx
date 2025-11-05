@@ -8,7 +8,7 @@ import { BrowserRouter } from 'react-router-dom'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <BrowserRouter basename={(import.meta as any).env.DEV ? '/' : (() => { const seg = (window.location.pathname.split('/')[1] || '').trim(); return seg ? `/${seg}/` : '/'; })()}>
         <App />
       </BrowserRouter>
     </AuthProvider>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import supabase from '../lib/supabaseClient'
 import { useAuth0 } from '@auth0/auth0-react'
+import { emailLocal } from '../lib/displayName'
 import { getLogoSrc } from '../lib/logoMap'
 
 type Team = {
@@ -83,7 +84,7 @@ export default function AdminPanel() {
   const loadUsers = async () => {
     setLoadingUsers(true)
     try {
-      const { data } = await supabase.from('uzytkownicy').select('user_id, nazwa_wyswietlana, email, rola, created_at').order('created_at', { ascending: false })
+  const { data } = await supabase.from('uzytkownicy').select('user_id, nazwa_wyswietlana, imie, nazwisko, email, rola, created_at').order('created_at', { ascending: false })
       setUsers((data as any[]) || [])
     } catch (e) {
       console.error(e)
@@ -132,12 +133,13 @@ export default function AdminPanel() {
     try {
       const { data, error } = await supabase
         .from('uzytkownicy')
-        .select('user_id, nazwa_wyswietlana, email')
+  .select('user_id, nazwa_wyswietlana, imie, nazwisko, email')
         .in('user_id', missing)
       if (error) throw error
       const map: Record<string, string> = {}
       ;(data as any[] || []).forEach((u) => {
-        map[u.user_id] = u.nazwa_wyswietlana || u.email || u.user_id
+  const full = (u.imie || u.nazwisko) ? `${u.imie ?? ''} ${u.nazwisko ?? ''}`.trim() : ''
+  map[u.user_id] = u.nazwa_wyswietlana || (full || undefined) || emailLocal(u.email) || u.user_id
       })
       setUserNames((prev) => ({ ...prev, ...map }))
     } catch (e) {
@@ -245,6 +247,8 @@ export default function AdminPanel() {
       if (pErr || !p) throw pErr || new Error('Proposal not found')
 
       // insert into turnieje
+  const isChess = p.sugerowana_dyscyplina === 'Szachy'
+  const fmt = isChess ? null : ((p.sugerowany_format_rozgrywek === 'Pucharowy' || p.sugerowany_format_rozgrywek === 'Liga') ? p.sugerowany_format_rozgrywek : 'Liga')
       const insertPayload: any = {
         nazwa: p.sugerowana_nazwa,
         dyscyplina: p.sugerowana_dyscyplina,
@@ -259,7 +263,7 @@ export default function AdminPanel() {
         czas_zakonczenia: p.sugerowany_czas_zakonczenia,
         data_zamkniecia_zapisow: p.sugerowana_data_zamkniecia_zapisow,
         opis_turnieju: p.dodatkowy_opis,
-        format_rozgrywek: p.sugerowany_format_rozgrywek,
+  format_rozgrywek: fmt as any,
         dlugosc_meczy: p.sugerowana_dlugosc_meczy,
         max_uczestnikow: p.sugerowany_max_uczestnikow,
         organizator_id: p.sugerowany_przez_user_id
@@ -472,7 +476,7 @@ export default function AdminPanel() {
               <tbody>
                 {users.map(u => (
                   <tr key={u.user_id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: 8 }}>{u.nazwa_wyswietlana || u.user_id}</td>
+                    <td style={{ padding: 8 }}>{u.nazwa_wyswietlana || ((u.imie || u.nazwisko) ? `${u.imie ?? ''} ${u.nazwisko ?? ''}`.trim() : '') || emailLocal(u.email) || u.user_id}</td>
                     <td style={{ padding: 8 }}>{u.email}</td>
                     <td style={{ padding: 8 }}>{u.rola}</td>
                     <td style={{ padding: 8 }}>

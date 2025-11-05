@@ -2,9 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
-  // IMPORTANT for GitHub Pages when served under /Wynikownia/
-  // Adjust if your repository name changes or you use a custom domain
-  base: '/Wynikownia/',
+export default defineConfig(({ command }) => ({
+  // Use GitHub Pages base only for production build; keep '/' in dev to avoid path warnings
+  base: command === 'build' ? '/Wynikownia/' : '/',
   plugins: [react()],
-})
+}))
