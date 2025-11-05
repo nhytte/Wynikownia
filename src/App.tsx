@@ -13,6 +13,7 @@ import CreateTournament from './pages/CreateTournament'
 import { useAuth0 } from '@auth0/auth0-react'
 import supabase from './lib/supabaseClient'
 import { emailLocal } from './lib/displayName'
+import { getAppBaseUrl } from './lib/url'
 
 function App() {
   const { isAuthenticated, isLoading, user, logout } = useAuth0()
@@ -48,7 +49,7 @@ function App() {
           ) : isAuthenticated ? (
             <>
               <span style={{ marginRight: 8 }}>{userFullName || (user as any)?.name || emailLocal((user as any)?.email)}</span>
-              <button onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>Log out</button>
+              <button onClick={() => logout({ logoutParams: { returnTo: getAppBaseUrl() } })}>Log out</button>
             </>
           ) : (
             <Link to="/login"><button>Log in / Register</button></Link>

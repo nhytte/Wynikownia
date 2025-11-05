@@ -4,6 +4,7 @@ import supabase from '../lib/supabaseClient'
 import { deriveProvince } from '../lib/province'
 import { Link } from 'react-router-dom'
 import { emailLocal } from '../lib/displayName'
+import { getAppBaseUrl } from '../lib/url'
 
 export default function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuth0()
@@ -84,7 +85,7 @@ export default function ProfilePage() {
           <h2 style={{ margin: 0 }}>{profile?.nazwa_wyswietlana || ((profile?.imie || profile?.nazwisko) ? `${profile?.imie ?? ''} ${profile?.nazwisko ?? ''}`.trim() : '') || emailLocal((user as any)?.email)}</h2>
         </div>
         <div>
-          <button onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} style={{ padding: '8px 12px' }}>Wyloguj</button>
+          <button onClick={() => logout({ logoutParams: { returnTo: getAppBaseUrl() } })} style={{ padding: '8px 12px' }}>Wyloguj</button>
         </div>
       </header>
 

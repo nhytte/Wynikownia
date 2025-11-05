@@ -1,5 +1,6 @@
 import React from 'react'
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
+import { getAppBaseUrl } from '../lib/url'
 import supabase from '../lib/supabaseClient'
 
 type Props = {
@@ -24,7 +25,8 @@ export default function AuthProvider({ children }: Props) {
       clientId={clientId}
       authorizationParams={{
         // Use universal login (redirect) and return to origin
-        redirect_uri: window.location.origin,
+        // Important for GitHub Pages: include base path (e.g. /Wynikownia/)
+        redirect_uri: typeof window !== 'undefined' ? getAppBaseUrl() : undefined,
         scope: 'openid profile email',
       }}
       useRefreshTokens={true}
