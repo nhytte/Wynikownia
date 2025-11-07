@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+<div align="center">
+  <h1>Wynikownia</h1>
+  <p><strong>Platforma do zarządzania turniejami, drużynami i wynikami — React 19 + TypeScript + Vite + Auth0 + Supabase.</strong></p>
+  <p>
+    <a href="https://vitejs.dev">Vite</a> ·
+    <a href="https://react.dev">React</a> ·
+    <a href="https://supabase.com">Supabase</a> ·
+    <a href="https://auth0.com">Auth0</a>
+  </p>
+</div>
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Spis treści
+1. Cel projektu / Overview  
+2. Funkcjonalności  
+3. Stos technologiczny (Stack)  
+4. Logika turniejów (Tournament Engine)  
+5. Style i komponenty  
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 1. Cel projektu / Overview
+Wynikownia to aplikacja webowa ułatwiająca:
+- zakładanie turniejów sportowych / szachowych / ligowych,
+- dodawanie drużyn i ich członków,
+- rejestrowanie wyników meczów oraz generowanie tabeli (punkty, bilans bramek),
+- obsługę różnych formatów: liga (round-robin), faza grupowa, puchar (knockout), system szwajcarski.
 
-## React Compiler
+Aplikacja działa jako SPA hostowana na GitHub Pages z dynamicznym `base` dopasowywanym w `vite.config.ts` i w `BrowserRouter`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 2. Funkcjonalności
+- Rejestracja / logowanie przez Auth0 (openid profile email). 
+- Synchronizacja podstawowych danych użytkownika z tabelą `uzytkownicy` w Supabase. 
+- Panel administratora (`AdminPanel`) dla zadań moderacyjnych (rola `Administrator`).
+- Tworzenie turniejów (`CreateTournament`) i drużyn (`CreateTeam`).
+- Podgląd szczegółów turnieju oraz drabinki / terminarza (`TournamentDetail`, komponent `TournamentView`).
+- Profil użytkownika (`Profile`).
+- Lista drużyn i szczegóły drużyny (`Teams`, `TeamDetail`).
 
-## Expanding the ESLint configuration
+## 3. Stos technologiczny (Stack)
+- React 19 + StrictMode
+- TypeScript 5.9 (konfiguracje: `tsconfig.app.json`, `tsconfig.node.json`)
+- Vite 7 (dev server + build)
+- React Router DOM 6
+- Auth0 React SDK (`@auth0/auth0-react`)
+- Supabase JS v2 (`@supabase/supabase-js`)
+- ESLint (konfiguracja w `eslint.config.js`)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 4. Logika turniejów (Tournament Engine)
+Centralny komponent: `components/TournamentView.tsx` obsługuje różne formaty:
+- LEAGUE / GROUP_STAGE: tabela + terminarz (fikstury), bulk ustawianie dat kolejki.
+- KNOCKOUT: drabinka pucharowa, edycja meczu (drużyny, wyniki).
+- SWISS_SYSTEM: ranking + pary rund, wsparcie dla wyników (1-0, 0.5-0.5, 0-1).
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Algorytm tabeli (plik `lib/footballTable.ts`):
+1. Liczenie statystyk (M, Z, R, P, bramki strzelone / stracone).
+2. Punkty: wygrana = 3, remis = 1, przegrana = 0.
+3. Sortowanie: Pkt → różnica bramek (GD) → bramki strzelone (GF) → nazwa.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 5. Style i komponenty
+Minimalistyczne style inline + pliki `App.css`, `index.css`. Komponenty stosują proste semantyczne elementy tabel / przycisków. Możliwa przyszła integracja z Tailwind / CSS Modules.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
