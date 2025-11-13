@@ -123,16 +123,16 @@ export default function TournamentDetail() {
 
   // participants map kept for other sections; bracket edit now uses TournamentView's participants
 
-  const handleDecision = async (zapisId: number, decision: 'Zaakceptowany' | 'Odrzucony') => {
-    try {
-      const { error } = await supabase.from('zapisy').update({ status: decision }).eq('zapis_id', zapisId)
-      if (error) throw error
-      await fetchDetail()
-    } catch (err) {
-      console.error(err)
-      alert('Nie udało się przetworzyć zgłoszenia')
-    }
-  }
+  // const handleDecision = async (zapisId: number, decision: 'Zaakceptowany' | 'Odrzucony') => {
+  //   try {
+  //     const { error } = await supabase.from('zapisy').update({ status: decision }).eq('zapis_id', zapisId)
+  //     if (error) throw error
+  //     await fetchDetail()
+  //   } catch (err) {
+  //     console.error(err)
+  //     alert('Nie udało się przetworzyć zgłoszenia')
+  //   }
+  // }
 
   const updateEdit = (id: number, field: string, value: any) => {
     setEdits((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), [field]: value } }))
