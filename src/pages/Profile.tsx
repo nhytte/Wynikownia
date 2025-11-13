@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import supabase from '../lib/supabaseClient'
 import { deriveProvince } from '../lib/province'
-import { Link } from 'react-router-dom'
 import { emailLocal } from '../lib/displayName'
 import { getAppBaseUrl } from '../lib/url'
 
 export default function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuth0()
-  const [saving, setSaving] = useState(false)
+  
   const [profile, setProfile] = useState<{ imie?: string; nazwisko?: string; nazwa_wyswietlana?: string } | null>(null)
   const [ownedTeams, setOwnedTeams] = useState<any[]>([])
   const [memberOf, setMemberOf] = useState<any[]>([])
@@ -76,105 +75,66 @@ export default function ProfilePage() {
   })
 
   return (
-    <div style={{ padding: 20, maxWidth: 960, margin: '0 auto' }}>
-      <header style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 18 }}>
-        <div style={{ width: 72, height: 72, borderRadius: 12, background: '#071013', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          { (user as any)?.picture ? <img src={(user as any).picture} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: 48, height: 48, background: '#152026' }} /> }
-        </div>
-        <div style={{ flex: 1 }}>
-          <h2 style={{ margin: 0 }}>{profile?.nazwa_wyswietlana || ((profile?.imie || profile?.nazwisko) ? `${profile?.imie ?? ''} ${profile?.nazwisko ?? ''}`.trim() : '') || emailLocal((user as any)?.email)}</h2>
-        </div>
-        <div>
-          <button onClick={() => logout({ logoutParams: { returnTo: getAppBaseUrl() } })} style={{ padding: '8px 12px' }}>Wyloguj</button>
-        </div>
-      </header>
+    <div className="page-content profile-page">
+      <h1 className="profile-title">Profil użytkownika</h1>
 
-      <section style={{ marginBottom: 18 }}>
-        <h3>Twoje dane</h3>
-        <div style={{ display: 'grid', gap: 8, maxWidth: 420 }}>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span>Imię</span>
-            <input value={profile?.imie ?? ''} onChange={(e) => setProfile((p: any) => ({ ...(p || {}), imie: e.target.value }))} style={{ padding: 8 }} />
-          </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span>Nazwisko</span>
-            <input value={profile?.nazwisko ?? ''} onChange={(e) => setProfile((p: any) => ({ ...(p || {}), nazwisko: e.target.value }))} style={{ padding: 8 }} />
-          </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span>Nazwa wyświetlana</span>
-            <input value={profile?.nazwa_wyswietlana ?? ''} onChange={(e) => setProfile((p: any) => ({ ...(p || {}), nazwa_wyswietlana: e.target.value }))} style={{ padding: 8 }} />
-          </label>
+      <div className="profile-card">
+        <div className="profile-inner">
+          <div className="avatar-circle">
+            { (user as any)?.picture ? <img src={(user as any).picture} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : <span>{(profile?.nazwa_wyswietlana || '').charAt(0).toUpperCase()}</span> }
+          </div>
+          <div className="display-name">{profile?.nazwa_wyswietlana || ((profile?.imie || profile?.nazwisko) ? `${profile?.imie ?? ''} ${profile?.nazwisko ?? ''}`.trim() : '') || emailLocal((user as any)?.email)}</div>
           <div>
-            <button disabled={saving} onClick={async () => {
-              if (!user) return
-              setSaving(true)
-              try {
-                const uid = (user as any).sub
-                const payload: any = {
-                  imie: profile?.imie ?? null,
-                  nazwisko: profile?.nazwisko ?? null,
-                  nazwa_wyswietlana: profile?.nazwa_wyswietlana ?? null,
-                }
-                const { error } = await supabase.from('uzytkownicy').update(payload).eq('user_id', uid)
-                if (error) throw error
-                alert('Zapisano')
-              } catch (e) {
-                console.error(e)
-                alert('Nie udało się zapisać danych')
-              } finally {
-                setSaving(false)
-              }
-            }}>Zapisz</button>
+            <button className="logout-btn" onClick={() => logout({ logoutParams: { returnTo: getAppBaseUrl() } })}>Wyloguj</button>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section style={{ marginBottom: 18 }}>
+      <div className="panel">
         <h3>Drużyny, do których należysz</h3>
-        {combinedTeams.length === 0 ? <div>Brak drużyn</div> : (
-          <div style={{ display: 'grid', gap: 8 }}>
+        {combinedTeams.length === 0 ? <div style={{ textAlign: 'center', color: 'var(--muted)' }}>Brak drużyn</div> : (
+          <div className="teams-list">
             {combinedTeams.map((t: any) => (
-              <div key={t.druzyna_id} style={{ padding: 12, borderRadius: 8, background: '#f7f7f7', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#213547' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <div style={{ fontWeight: 700, textAlign: 'left' }}>{t.nazwa_druzyny}{t.owner_id === (user as any).sub ? ' — Właściciel' : ''}</div>
+              <div key={t.druzyna_id} className="team-row">
+                <div className="team-left">
+                  <div className="team-icon">⚔️</div>
+                  <div>
+                    <div className="team-name">{t.nazwa_druzyny}{t.owner_id === (user as any).sub ? ' — Właściciel' : ''}</div>
+                    <div className="team-prov">{t.wojewodztwo || ''}{t.wojewodztwo ? ', ' : ''}{t.dyscyplina || ''}</div>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                  <div style={{ fontSize: 13, color: '#555' }}>{t.wojewodztwo || ''}{t.wojewodztwo ? ', ' : ''}{t.dyscyplina || ''}</div>
-                  <div style={{ marginTop: 6, fontWeight: 700 }}>{t.liczba_czlonkow ?? '-'}</div>
+                <div className="team-right">
+                  <div className="team-count">{t.liczba_czlonkow ?? '-'}</div>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </section>
+      </div>
 
-      <section>
+      <div className="panel">
         <h3>Turnieje</h3>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <button onClick={() => setTab('zapisane')} style={{ padding: '6px 10px', background: tab === 'zapisane' ? '#2563eb' : '#f3f4f6', color: tab === 'zapisane' ? '#fff' : '#111', border: 'none', borderRadius: 6 }}>Zapisane</button>
-          <button onClick={() => setTab('rozegrane')} style={{ padding: '6px 10px', background: tab === 'rozegrane' ? '#2563eb' : '#f3f4f6', color: tab === 'rozegrane' ? '#fff' : '#111', border: 'none', borderRadius: 6 }}>Rozegrane</button>
+        <div className="tabs">
+          <button className={tab === 'zapisane' ? 'tab-pill active' : 'tab-pill'} onClick={() => setTab('zapisane')}>Zapisane</button>
+          <button className={tab === 'rozegrane' ? 'tab-pill active' : 'tab-pill'} onClick={() => setTab('rozegrane')}>Rozegrane</button>
         </div>
 
-        <div style={{ display: 'grid', gap: 8 }}>
-          {(tab === 'zapisane' ? zapisane : rozegrane).length === 0 ? <div>Brak turniejów</div> : (tab === 'zapisane' ? zapisane : rozegrane).map((z: any) => {
+        <div style={{ display: 'grid', gap: 12 }}>
+          {(tab === 'zapisane' ? zapisane : rozegrane).length === 0 ? <div style={{ textAlign: 'center', color: 'var(--muted)' }}>Brak turniejów</div> : (tab === 'zapisane' ? zapisane : rozegrane).map((z: any) => {
             const t = z.turnieje
             const start = t?.data_rozpoczecia ? new Date(t.data_rozpoczecia) : null
             const dateStr = start ? start.toLocaleDateString('pl-PL') : ''
             const prov = deriveProvince(`${t?.wojewodztwo ?? ''} ${t?.lokalizacja ?? ''}`)
             return (
-              <div key={z.zapis_id || z.turniej_id} style={{ padding: 12, borderRadius: 8, background: '#f7f7f7', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#213547' }}>
-                <div style={{ fontWeight: 700, textAlign: 'left' }}>{t?.nazwa}</div>
-                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                  <div style={{ fontSize: 13, color: '#555' }}>{prov ? `${prov}, ${dateStr}` : dateStr}</div>
-                  <div style={{ marginTop: 8 }}>
-                    <Link to={`/tournaments/${t?.turniej_id}`}><button style={{ padding: '6px 10px' }}>Szczegóły</button></Link>
-                  </div>
-                </div>
+              <div key={z.zapis_id || z.turniej_id} className="tournament-row">
+                <div className="tournament-left">{t?.nazwa}</div>
+                <div className="tournament-mid">{prov || ''}</div>
+                <div className="date-pill">{dateStr}</div>
               </div>
             )
           })}
         </div>
-      </section>
+      </div>
     </div>
   )
 }

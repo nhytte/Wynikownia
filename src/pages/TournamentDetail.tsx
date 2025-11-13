@@ -5,6 +5,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { getLogoSrc } from '../lib/logoMap'
 import { deriveProvince } from '../lib/province'
 import TournamentView from '../components/TournamentView.tsx'
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=location_on" />
 
 export default function TournamentDetail() {
   const { id } = useParams<{ id: string }>()
@@ -881,6 +882,8 @@ export default function TournamentDetail() {
   const provinceDisplay = deriveProvince(`${tournament.wojewodztwo ?? ''} ${tournament.lokalizacja ?? ''}`)
   const isIndividual = tournament.typ_zapisu === 'Indywidualny' || tournament.dyscyplina === 'Szachy'
 
+  const descriptionText = (tournament.opis || tournament.dodatkowy_opis || tournament.description || '').toString()
+
   // build props for TournamentView (football paths). For swiss we need server-provided data.
   const tvParticipants = accepted.map((a) => {
     const full = (a.user_info?.imie || a.user_info?.nazwisko) ? `${a.user_info?.imie ?? ''} ${a.user_info?.nazwisko ?? ''}`.trim() : ''
@@ -908,112 +911,84 @@ export default function TournamentDetail() {
           <div style={{ color: '#9fb3c8', marginTop: 6 }}>{tournament.dyscyplina}</div>
         </header>
 
-        <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div style={{ background: '#0d1315', padding: 16, borderRadius: 8 }}>
-            <h3 style={{ marginTop: 0 }}>Data</h3>
-            <div style={{ fontSize: 16 }}>{formattedDate}</div>
-            <div style={{ marginTop: 8, color: '#c9d9e6' }}>{timeRange}</div>
+        {/* Detail grid: left image, right meta + register */}
+        <section className="detail-grid">
+          <div className="detail-image">
+            {/* Tournament image or fallback */}
+            <img src={(tournament.zdjecie && tournament.zdjecie.length) ? tournament.zdjecie : '/src/img/lawka.jpeg'} alt={tournament.nazwa} />
           </div>
 
-          <div style={{ background: '#0d1315', padding: 16, borderRadius: 8 }}>
-            <h3 style={{ marginTop: 0 }}>Lokalizacja</h3>
-            <div style={{ fontSize: 16 }}>{tournament.lokalizacja}</div>
-              {tournament.szczegolowa_lokalizacja && <div style={{ marginTop: 8, color: '#c9d9e6' }}>{tournament.szczegolowa_lokalizacja}</div>}
-              {tournament.dokladne_miejsce && <div style={{ marginTop: 6, color: '#9fb3c8' }}>{tournament.dokladne_miejsce}</div>}
-              <div style={{ marginTop: 8, color: '#c9d9e6' }}><strong>Województwo:</strong> {provinceDisplay || '—'}</div>
-          </div>
-        </section>
-
-        <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
-          <div style={{ background: '#0b1112', padding: 16, borderRadius: 8 }}>
-            <h3 style={{ marginTop: 0 }}>{isIndividual ? 'Uczestnicy' : 'Drużyny'}</h3>
-            <div style={{ fontSize: 16 }}>{accepted.length}/{tournament.max_uczestnikow || '—'}</div>
-
-            <div style={{ marginTop: 12 }}>
-              {isAuthenticated ? (
-                isIndividual ? (
-                  <div style={{ display: 'grid', gap: 8 }}>
-                    <button onClick={handleRegisterTeam} disabled={registering} style={{ padding: '8px 12px', background: '#2b8cff', color: '#001024', border: 'none', borderRadius: 6 }}>
-                      {registering ? 'Rejestrowanie…' : 'Zapisz się'}
-                    </button>
-                    {(isOrganizer || isAdmin) && (
-                      <div style={{ marginTop: 8, padding: 10, background: '#091216', borderRadius: 6 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Dodaj uczestnika (admin)</div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Szukaj po emailu lub nazwie" style={{ padding: 8, minWidth: 240, background: '#071013', color: '#e6edf3', border: '1px solid #28363c' }} />
-                          <button onClick={searchUsers} disabled={searchingUsers || !userSearch.trim()} style={{ padding: '8px 12px', background: '#0ea5e9', color: '#001024', border: 'none', borderRadius: 6 }}>{searchingUsers ? 'Szukam…' : 'Szukaj'}</button>
-                        </div>
-                        {userResults.length > 0 && (
-                          <div style={{ marginTop: 8, maxHeight: 200, overflowY: 'auto', borderTop: '1px solid #102028' }}>
-                            {userResults.map((u: any) => {
-                              const already = accepted.some((a) => a.user_id === u.user_id)
-                              return (
-                                <div key={u.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #0f1a20' }}>
-                                  <div>
-                                    <div>{u.nazwa_wyswietlana || '—'}</div>
-                                    <div style={{ fontSize: 12, color: '#9fb3c8' }}>{u.email}</div>
-                                  </div>
-                                  <button disabled={already} onClick={() => adminAddChessParticipant(u.user_id)} style={{ padding: '6px 10px', background: already ? '#334155' : '#22c55e', color: already ? '#94a3b8' : '#001024', border: 'none', borderRadius: 6 }}>{already ? 'Dodano' : 'Dodaj'}</button>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  userTeams.length > 0 ? (
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} style={{ padding: 8, background: '#071013', color: '#e6edf3', border: '1px solid #28363c' }}>
-                        <option value="">Wybierz drużynę…</option>
-                        {userTeams.map((t: any) => <option key={t.druzyna_id} value={t.nazwa_druzyny}>{t.nazwa_druzyny}</option>)}
-                      </select>
-                      <button onClick={handleRegisterTeam} disabled={registering} style={{ padding: '8px 12px', background: '#2b8cff', color: '#001024', border: 'none', borderRadius: 6 }}>{registering ? 'Rejestrowanie…' : 'Zarejestruj drużynę'}</button>
-                    </div>
-                  ) : <div>Nie masz drużyn w tej dyscyplinie.</div>
-                )
-              ) : (
-                <div>Zaloguj się, aby się zapisać.</div>
-              )}
-
-              {tournament.data_zamkniecia_zapisow && <div style={{ marginTop: 10, color: '#9fb3c8' }}>Rejestracja zamyka się: {new Date(tournament.data_zamkniecia_zapisow).toLocaleString()}</div>}
-            </div>
-          </div>
-
-          <div style={{ background: '#0b1112', padding: 16, borderRadius: 8 }}>
-            <h3 style={{ marginTop: 0 }}>Opis turnieju</h3>
-            <div style={{ whiteSpace: 'pre-wrap', color: '#e6edf3' }}>{tournament.opis_turnieju || 'Brak opisu'}</div>
-
-            <div style={{ marginTop: 12 }}><strong>Format:</strong> <span style={{ color: '#c9d9e6' }}>{tournament.format_rozgrywek || '—'}</span></div>
-            {tournament.dlugosc_meczy && <div style={{ marginTop: 6 }}><strong>Długość meczy:</strong> <span style={{ color: '#c9d9e6' }}>{tournament.dlugosc_meczy}</span></div>}
-
-            {isOrganizer && (
-              <div style={{ marginTop: 14, padding: 12, background: '#061012', borderRadius: 6 }}>
-                <h4 style={{ margin: '0 0 8px 0' }}>Prośby o zapis (widoczne tylko dla właściciela)</h4>
-                {pending.length === 0 ? <div>Brak oczekujących zgłoszeń</div> : (
-                  <div style={{ display: 'grid', gap: 8 }}>
-                    {pending.map((p) => (
-                      <div key={p.zapis_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 44, height: 44, background: '#071013', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {p.team?.logo ? <img src={getLogoSrc(p.team.logo) || undefined} alt="logo" style={{ width: 40, height: 40, objectFit: 'contain' }} /> : <div style={{ width: 40, height: 40, background: '#152026' }} />}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 600 }}>{p.nazwa_druzyny ?? p.user_id}</div>
-                            <div style={{ fontSize: 12, color: '#9fb3c8' }}>{p.user_id}</div>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button onClick={() => handleDecision(p.zapis_id, 'Zaakceptowany')} style={{ padding: '6px 8px', background: '#2ecc71', border: 'none', borderRadius: 6 }}>Akceptuj</button>
-                          <button onClick={() => handleDecision(p.zapis_id, 'Odrzucony')} style={{ padding: '6px 8px', background: '#e74c3c', border: 'none', borderRadius: 6 }}>Odrzuć</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          <div className="detail-right">
+            <div className="meta-cards">
+              <div className="meta-card">
+                <h4><img src="/src/img/calender.svg" alt="Data"/>Data</h4>
+                <div className="meta-value">{formattedDate}</div>
+                <div className="meta-sub">{timeRange}</div>
               </div>
-            )}
+              <div className="meta-card">
+                <h4><img src="/src/img/team.svg" alt="Drużyny"/>Drużyny</h4>
+                <div className="meta-value">{accepted.length} / {tournament.max_uczestnikow || '—'}</div>
+                <div className="meta-sub">{accepted.length} wolnych miejsc: {Math.max(0, (tournament.max_uczestnikow || 0) - accepted.length)}</div>
+              </div>
+              <div className="meta-card">
+                <h4><img src="/src/img/location.svg" alt="Lokalizacja"/>Lokalizacja</h4>
+                <div className="meta-value">{tournament.lokalizacja || '—'}</div>
+                {tournament.dokladne_miejsce && <div className="meta-sub">{tournament.dokladne_miejsce}</div>}
+                <div className="meta-sub">Województwo: {provinceDisplay || '—'}</div>
+              </div>
+            </div>
+
+            <div className="register-area">
+              {/* Registration UI (keeps existing logic) */}
+              <div style={{ marginBottom: 10 }}>
+                {isAuthenticated ? (
+                  isIndividual ? (
+                    <div>
+                      <button className="register-btn" onClick={handleRegisterTeam} disabled={registering}>{registering ? 'Rejestrowanie…' : 'Zapisz się'}</button>
+                      {(isOrganizer || isAdmin) && (
+                        <div style={{ marginTop: 12, padding: 10, background: '#061012', borderRadius: 6 }}>
+                          <div style={{ fontWeight: 600, marginBottom: 6 }}>Dodaj uczestnika (admin)</div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Szukaj po emailu lub nazwie" style={{ padding: 8, minWidth: 240, background: '#071013', color: '#e6edf3', border: '1px solid #28363c' }} />
+                            <button onClick={searchUsers} disabled={searchingUsers || !userSearch.trim()} style={{ padding: '8px 12px', background: '#0ea5e9', color: '#001024', border: 'none', borderRadius: 6 }}>{searchingUsers ? 'Szukam…' : 'Szukaj'}</button>
+                          </div>
+                          {userResults.length > 0 && (
+                            <div style={{ marginTop: 8, maxHeight: 200, overflowY: 'auto', borderTop: '1px solid #102028' }}>
+                              {userResults.map((u: any) => {
+                                const already = accepted.some((a) => a.user_id === u.user_id)
+                                return (
+                                  <div key={u.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #0f1a20' }}>
+                                    <div>
+                                      <div>{u.nazwa_wyswietlana || '—'}</div>
+                                      <div style={{ fontSize: 12, color: '#9fb3c8' }}>{u.email}</div>
+                                    </div>
+                                    <button disabled={already} onClick={() => adminAddChessParticipant(u.user_id)} style={{ padding: '6px 10px', background: already ? '#334155' : '#22c55e', color: already ? '#94a3b8' : '#001024', border: 'none', borderRadius: 6 }}>{already ? 'Dodano' : 'Dodaj'}</button>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    userTeams.length > 0 ? (
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} style={{ padding: 8, background: '#071013', color: '#e6edf3', border: '1px solid #28363c' }}>
+                          <option value="">Wybierz drużynę…</option>
+                          {userTeams.map((t: any) => <option key={t.druzyna_id} value={t.nazwa_druzyny}>{t.nazwa_druzyny}</option>)}
+                        </select>
+                        <button className="register-btn" onClick={handleRegisterTeam} disabled={registering}>{registering ? 'Rejestrowanie…' : 'Zarejestruj drużynę'}</button>
+                      </div>
+                    ) : <div>Nie masz drużyn w tej dyscyplinie.</div>
+                  )
+                ) : (
+                  <div>Zaloguj się, aby się zapisać.</div>
+                )}
+
+                {tournament.data_zamkniecia_zapisow && <div style={{ marginTop: 10, color: '#9fb3c8' }}>Rejestracja zamyka się: {new Date(tournament.data_zamkniecia_zapisow).toLocaleString()}</div>}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1042,7 +1017,15 @@ export default function TournamentDetail() {
           </section>
         )}
 
-        <section style={{ marginTop: 16, background: '#0b1112', padding: 16, borderRadius: 8 }}>
+        {/* Opis turnieju */}
+        <section>
+            <div className="description-panel" style={{ marginTop: 12 }}>
+              <h3 style={{ marginTop: 0, textAlign: 'center' }}>Opis turnieju</h3>
+              <div style={{ color: '#cfe6ea', textAlign: 'center', whiteSpace: 'pre-line' }}>{descriptionText || 'Brak opisu'}</div>
+            </div>
+          </section>
+
+        <section style={{ marginTop: 16, background: 'var(--navy)', padding: 16, borderRadius: 8 }}>
           <h3 style={{ marginTop: 0 }}>{isIndividual ? 'Zarejestrowani uczestnicy' : 'Zarejestrowane drużyny'}</h3>
           {isIndividual ? (
             <div>
@@ -1080,10 +1063,9 @@ export default function TournamentDetail() {
           )}
         </section>
 
-        
 
         {/* Tournament view: league table / bracket / swiss */}
-        <section style={{ marginTop: 16, background: '#0b1112', padding: 16, borderRadius: 8 }}>
+        <section style={{ marginTop: 16, background: 'var(--navy)', padding: 16, borderRadius: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ marginTop: 0, marginBottom: 0 }}>Wyniki i przebieg</h3>
             {(isOrganizer || isAdmin) && (
@@ -1141,6 +1123,7 @@ export default function TournamentDetail() {
               </div>
             )}
           </div>
+            
 
           {(() => {
             const tType = tournament.dyscyplina === 'Szachy'

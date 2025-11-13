@@ -1,42 +1,232 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+:root {
+  --navy: #0F172A;
+  --background-gray: #1b2433;
+  --muted: rgba(255,255,255,0.75);
+  --accent-green: #22C55E;
+  --accent-blue: #2563EB;
+  --accent-red: #DB2A2A;
+  --morski: #57E8DA;
+}
+
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background-gray);
+  color: #edf2f7;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  gap: 12px;
+  background: var(--navy);
+}
+.topbar-left .brand {
+  display:flex; align-items:center; gap:10px;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+.category-bar { display:flex; justify-content:center; background: var(--navy); padding: 8px 0; width: 100% }
+.category-inner { display:flex; gap:12px }
+.category-btn { background: transparent; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; position: relative }
+.category-btn:hover { background: rgba(255,255,255,0.04) }
+.category-selected { background: rgba(255,255,255,0.08); box-shadow: none; }
+.category-selected::after { content: ''; position:absolute; left:12px; right:12px; bottom:-8px; height:4px; background:#fff; border-radius:2px }
+
+.topbar-center {
+  flex: 1 1 480px;
+  display: flex;
+  justify-content: center;
+}
+.search {
+  width: 70%;
+  max-width: 640px;
+  min-width: 220px;
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: none;
+  background: rgba(255,255,255,0.03);
+  color: #eef6f9;
+}
+.search::placeholder { color: var(--muted); }
+
+.topbar-right { display:flex; align-items:center; gap:10px; }
+.topbar-right .user-name { margin-right:8px; color:var(--muted); font-size:0.95rem }
+
+button.primary {
+  background: var(--accent-blue);
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  border: none;
+  cursor: pointer;
+}
+button.ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.status-btn { padding:8px 12px; border-radius:20px; border:1px solid rgba(255,255,255,0.04); background:#000; color:#fff; cursor:pointer }
+.status-active { background: var(--accent-red); color:#fff; border-color: var(--accent-red) }
+.status-open { background: var(--accent-green); color: #042018 }
+
+.page-content {
+  max-width: 1180px;
+  margin: 28px auto;
+  padding: 0 20px 80px;
+  width: 100%;
+}
+
+.filters-center { display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:18px }
+.discipline-row { display:flex; gap:8px }
+.province-block { background: var(--navy); padding:8px 12px; border-radius:8px; font-weight:600; color: white}
+
+.section-title {
   text-align: center;
+  font-family: 'Lora', serif;
+  font-size: 32px;
+  margin: 16px 0 8px 0;
+  color: #f5f9fb;
+}
+.section-sub {
+  text-align:center; color:var(--muted); margin-bottom: 28px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.cards-grid {
+  display: grid;
+  /* maximum three cards per row for more spacing */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+@media (max-width: 1024px) {
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+@media (max-width: 720px) {
+  .cards-grid { grid-template-columns: 1fr; }
 }
 
-.card {
-  padding: 2em;
+.card-panel {
+  background: var(--navy);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+.card-panel img { width:100%; height:120px; object-fit:cover; border-radius:8px }
+.card-media { width:100%; height:120px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:var(--muted) }
+.card-panel .meta { margin-top:10px }
+
+/* Card two-column content (below the image): left = stacked text, right = centered button */
+.card-content { display:flex; gap:12px; align-items:center; margin-top:8px }
+.card-left { flex: 1 1 auto; display:flex; flex-direction:column; gap:6px }
+.card-left .meta { color: var(--muted); font-size: 13px;}
+.card-right { width: 140px; display:flex; align-items:center; justify-content:center }
+.card-right .badge { padding: 8px 14px; border-radius: 20px }
+.group-title { text-align:center; color:#fff; margin-top:18px }
+.card-media img { width:100%; height:120px; object-fit:cover; border-radius:8px }
+.badge { background: var(--accent); color:#04231a; padding:6px 10px; border-radius:20px; font-weight:600 }
+
+.hero-create {
+  margin: 44px 0;
+  background: var(--navy);
+  border-radius: 8px;
+  color: #fff;
+  text-align: center;
+  padding: 0; /* image will reach edges; inner text lives in .hero-inner */
+  overflow: hidden;
 }
 
-.read-the-docs {
-  color: #888;
+.hero-create img { width:100%; height:200px; object-fit: cover; border-radius: 8px 8px 0 0; display:block }
+
+.site-footer { margin-top: auto; padding: 28px; background: #0F172A; }
+.footer-inner { max-width:1180px; margin: 0 auto; display:flex; justify-content:space-between; align-items:center; color:var(--muted) }
+.brand-small { color:var(--accent); font-weight:700 }
+
+@media (max-width: 720px) {
+  .topbar-center { display: none }
+  .page-content { padding: 0 12px 64px }
+}
+
+/* Profile page styles */
+.profile-page { padding: 28px 0 80px }
+.profile-title { text-align: center; font-family: 'Lora', serif; font-size: 36px; margin: 8px 0 20px; color: #fff }
+.profile-card { background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); border-radius: 12px; padding: 24px; margin-bottom: 22px }
+.profile-inner { background: rgba(255,255,255,0.02); border-radius: 10px; padding: 30px; text-align: center }
+.avatar-circle { width: 96px; height: 96px; border-radius: 50%; background: #e6e6e6; margin: 0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:36px; color:#111 }
+.display-name { font-size: 18px; color: var(--muted); margin-bottom: 12px; text-transform: none }
+.logout-btn { background: var(--accent-red); color: #fff; border: none; padding: 8px 22px; border-radius: 8px; cursor: pointer }
+
+.panel { background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); border-radius: 12px; padding: 18px; margin-bottom: 22px }
+.panel h3 { margin: 0 0 12px; color: #fff; text-align: center }
+
+.teams-list { display: grid; gap: 12px }
+.team-row { display:flex; align-items:center; justify-content:space-between; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: transparent; color: var(--muted) }
+.team-left { display:flex; gap:12px; align-items:center }
+.team-icon { width:44px; height:44px; border-radius:8px; background: rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; color: var(--muted) }
+.team-name { font-weight:700; color:#fff }
+.team-right { display:flex; gap:12px; align-items:center }
+.team-prov { color: var(--muted); font-size:13px }
+.team-count { background: rgba(255,255,255,0.04); padding:6px 10px; border-radius:8px; color: var(--muted); font-weight:700 }
+
+.tabs { display:flex; gap:12px; justify-content:center; margin-bottom:12px }
+.tab-pill { background: #0b1116; color:#fff; padding:6px 16px; border-radius: 999px; border: none; cursor: pointer }
+.tab-pill.active { background: var(--accent-blue); color:#fff }
+
+.tournament-row { display:flex; align-items:center; justify-content:space-between; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: transparent; color: var(--muted) }
+.tournament-left { font-weight:700; color:#fff }
+.tournament-mid { color: var(--muted); font-size:13px }
+.date-pill { background: rgba(255,255,255,0.04); padding:6px 10px; border-radius:8px; color: var(--muted) }
+
+@media (max-width: 720px) {
+  .avatar-circle { width: 80px; height: 80px; font-size:28px }
+  .profile-title { font-size: 28px }
+}
+
+/* Tournament detail page */
+.detail-grid { display: grid; grid-template-columns: 360px 1fr; gap: 24px; margin-top: 8px }
+.detail-image img { width: 100%; height: auto; border-radius: 10px; display:block }
+.detail-right { display: flex; flex-direction: column; gap: 14px;}
+.meta-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px }
+.meta-card { background: var(--navy); padding: 12px; border-radius: 8px; text-align: center }
+.meta-card img { vertical-align: middle; margin-right: 6px; width: 20px; height: 20px;}
+/* Make the third meta card (Lokalizacja) span full width and center its content */
+.meta-cards .meta-card:nth-child(3) { grid-column: 1 / -1 }
+.meta-card h4 { display:flex; justify-content:center; align-items:center; gap:8px; margin: 0 0 6px 0 }
+/* Make the calendar, team and location icons use the accent green color */
+.meta-card img[src$="calender.svg"],
+.meta-card img[src$="team.svg"],
+.meta-card img[src$="location.svg"] {
+  /* Approximate recolor for external SVG images using filter to match --accent-green */
+  filter: invert(48%) sepia(63%) saturate(520%) hue-rotate(70deg) brightness(95%) contrast(90%);
+}
+.meta-card h4 { margin: 0 0 6px 0;}
+.meta-value { font-weight: 700; color: #fff; margin-bottom: 6px }
+.meta-sub { color: var(--muted); font-size: 13px }
+.register-area { margin-top: 6px }
+.register-btn { background: var(--accent-green); color: #042018; border: none; padding: 12px 18px; border-radius: 8px; font-weight: 700; cursor: pointer }
+.description-panel { margin-top: 16px; background: var(--navy); border-radius: 8px; padding: 16px }
+.teams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 12px }
+.team-card { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; text-align: center }
+.team-card img { width: 64px; height: 64px; object-fit: contain; margin: 0 auto }
+
+@media (max-width: 900px) {
+  .detail-grid { grid-template-columns: 1fr; }
+  .detail-image img { height: 220px; object-fit: cover }
+  .meta-cards { grid-template-columns: 1fr }
+  .meta-cards .meta-card:nth-child(3) { grid-column: auto }
 }
