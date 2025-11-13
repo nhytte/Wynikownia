@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth0 } from '@auth0/auth0-react'
+import lawka from '../img/lawka.jpeg'
+import pilka from '../img/pilka.jpg'
+import puchar from '../img/puchar.jpg'
 import supabase from '../lib/supabaseClient'
 
 type Tournament = {
@@ -16,14 +18,18 @@ type Tournament = {
   format_rozgrywek?: string | null
 }
 
-export default function TournamentsPage() {
-  const { isAuthenticated } = useAuth0()
+type Props = {
+  discipline?: string
+  setDiscipline?: (d: string) => void
+}
+
+export default function TournamentsPage(props: Props) {
   const [tournaments, setTournaments] = useState<Tournament[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // organizers removed: no longer display organizer on cards
   const [registeredCounts, setRegisteredCounts] = useState<Record<number, number>>({})
-  const [selectedDiscipline, setSelectedDiscipline] = useState<string>('Pilka nozna')
+  const selectedDiscipline = props.discipline ?? 'Pilka nozna'
   const [selectedWoj, setSelectedWoj] = useState<string>('All')
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'upcoming' | 'ongoing' | 'finished'>('all')
 
@@ -102,7 +108,7 @@ export default function TournamentsPage() {
     return { t, start, status, registered }
   })
 
-  const disciplines = ['Pilka nozna', 'Szachy']
+  // disciplines handled in navbar
 
   const filtered = withMeta
     .filter((w) => w.t.dyscyplina === selectedDiscipline)
@@ -167,85 +173,136 @@ export default function TournamentsPage() {
       return (text || '-')
     })()
 
+    const imgForStatus = item.status === 'ongoing' ? pilka : item.status === 'finished' ? puchar : lawka
+
     return (
-      <article key={t.turniej_id} style={{ border: '1px solid #e6e6e6', borderRadius: 8, padding: 12, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', color: '#213547' }}>
-  <div style={{ width: '100%', height: 120, background: '#f3f3f3', borderRadius: 6, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>Grafika</div>
-        <h3 style={{ margin: '0 0 6px' }}><Link to={`/tournaments/${t.turniej_id}`}>{t.nazwa}</Link></h3>
-          <div style={{ fontSize: 13, color: '#555', display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
-              <div><strong>Dzień:</strong> {day}</div>
-              <div><strong>Rejestracja:</strong> {`${registered}/${max || '-'}`}</div>
-              <div><strong>Województwo:</strong> {provinceDisplay}</div>
+      <article key={t.turniej_id} className="card-panel">
+        <div className="card-media"><img src={imgForStatus} alt="miniatura" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8 }} /></div>
+
+        <div className="card-content">
+          <div className="card-left">
+            <h3 style={{ margin: 0 }}><Link to={`/tournaments/${t.turniej_id}`}>{t.nazwa}</Link></h3>
+            <div className="meta" style={{ marginTop: 6 }}>
+              <div style={{ color: '#9CA3AF', padding: '5px 0' }}>Dzień: {day}</div>
+              <div style={{ color: '#6B7280', padding: '5px 0' }}>Rejestracja: {`${registered}/${max || '-'}`}</div>
+              <div style={{ color: 'var(--morski)', padding: '5px 0' }}>Województwo: {provinceDisplay}</div>
             </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <div style={{ padding: '6px 10px', borderRadius: 6, background: item.status === 'ongoing' ? '#e6fffa' : item.status === 'finished' ? '#f3f3f3' : '#eef2ff', color: '#111', fontWeight: 600 }}>{statusLabel}</div>
+          </div>
+
+          <div className="card-right">
+            <Link to={`/tournaments/${t.turniej_id}`} className="badge" style={{ background: item.status === 'ongoing' ? 'var(--accent-red)' : item.status === 'finished' ? 'rgba(255,255,255,0.06)' : 'var(--accent-green)', color: item.status === 'finished' ? 'var(--muted)' : item.status === 'ongoing' ? '#fff' : '#042018', fontWeight: 600 }}>{statusLabel}</Link>
+          </div>
         </div>
       </article>
     )
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h2 style={{ margin: 0 }}>Turnieje</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {isAuthenticated ? (
-            <>
-              <a href="/create-team"><button>Stwórz swoją drużynę</button></a>
-              <a href="/create-tournament"><button>Zaproponuj turniej</button></a>
-            </>
-          ) : (
-            <div />
-          )}
+    <div className="page-section">
+      {/* Filters (province + status) centered — discipline buttons moved into navbar */}
+      <div className="filters-center" style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div className="province-block">Województwo:&nbsp;
+            <select value={selectedWoj} onChange={(e) => setSelectedWoj(e.target.value)} style={{ marginLeft: 8, borderRadius: 6, padding: '6px 8px', background: '#fff', color: '#000', border: '1px solid rgba(0,0,0,0.06)' }}>
+              <option value="All">All</option>
+              <option value="Dolnośląskie">Dolnośląskie</option>
+              <option value="Kujawsko-pomorskie">Kujawsko-pomorskie</option>
+              <option value="Lubelskie">Lubelskie</option>
+              <option value="Lubuskie">Lubuskie</option>
+              <option value="Łódzkie">Łódzkie</option>
+              <option value="Małopolskie">Małopolskie</option>
+              <option value="Mazowieckie">Mazowieckie</option>
+              <option value="Opolskie">Opolskie</option>
+              <option value="Podkarpackie">Podkarpackie</option>
+              <option value="Podlaskie">Podlaskie</option>
+              <option value="Pomorskie">Pomorskie</option>
+              <option value="Śląskie">Śląskie</option>
+              <option value="Świętokrzyskie">Świętokrzyskie</option>
+              <option value="Warmińsko-mazurskie">Warmińsko-mazurskie</option>
+              <option value="Wielkopolskie">Wielkopolskie</option>
+              <option value="Zachodniopomorskie">Zachodniopomorskie</option>
+            </select>
+          </div>
+
+          <div>
+            <button className={selectedStatus === 'all' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('all')}>Wszystkie</button>
+            <button className={selectedStatus === 'upcoming' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('upcoming')} style={{ marginLeft: 8 }}>Nadchodzące</button>
+            <button className={selectedStatus === 'ongoing' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('ongoing')} style={{ marginLeft: 8 }}>W trakcie</button>
+            <button className={selectedStatus === 'finished' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('finished')} style={{ marginLeft: 8 }}>Zakończone</button>
+          </div>
         </div>
       </div>
 
-      {/* Discipline tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        {disciplines.map((d) => (
-          <button key={d} onClick={() => setSelectedDiscipline(d)} style={{ padding: '8px 12px', borderRadius: 6, background: selectedDiscipline === d ? '#2563eb' : '#f3f4f6', color: selectedDiscipline === d ? '#fff' : '#111', border: 'none' }}>{d}</button>
-        ))}
+      {/* Title centered below filters */}
+      <div style={{ textAlign: 'center', marginBottom: 18 }}>
+        <h2 className="section-title">Turnieje</h2>
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16 }}>
-        <label>
-          Województwo:
-          <select value={selectedWoj} onChange={(e) => setSelectedWoj(e.target.value)} style={{ marginLeft: 8 }}>
-            <option value="All">All</option>
-            <option value="Dolnośląskie">Dolnośląskie</option>
-            <option value="Kujawsko-pomorskie">Kujawsko-pomorskie</option>
-            <option value="Lubelskie">Lubelskie</option>
-            <option value="Lubuskie">Lubuskie</option>
-            <option value="Łódzkie">Łódzkie</option>
-            <option value="Małopolskie">Małopolskie</option>
-            <option value="Mazowieckie">Mazowieckie</option>
-            <option value="Opolskie">Opolskie</option>
-            <option value="Podkarpackie">Podkarpackie</option>
-            <option value="Podlaskie">Podlaskie</option>
-            <option value="Pomorskie">Pomorskie</option>
-            <option value="Śląskie">Śląskie</option>
-            <option value="Świętokrzyskie">Świętokrzyskie</option>
-            <option value="Warmińsko-mazurskie">Warmińsko-mazurskie</option>
-            <option value="Wielkopolskie">Wielkopolskie</option>
-            <option value="Zachodniopomorskie">Zachodniopomorskie</option>
-          </select>
-        </label>
+      {/* Grid: grouped by status when 'all' selected */}
+      {selectedStatus === 'all' ? (
+        <>
+          <h3 className="group-title">Nadchodzące</h3>
+          <div className="cards-grid">{withMeta.filter((w)=>{
+            const text = ((w.t.wojewodztwo ?? w.t.lokalizacja) || '').toString()
+            const matchesWoj = selectedWoj === 'All' ? true : text.toLowerCase().includes(selectedWoj.toLowerCase())
+            return w.status === 'upcoming' && w.t.dyscyplina === selectedDiscipline && matchesWoj
+          }).map(renderCard)}</div>
+          
+          {/* Create block that spans full width (3 columns) - always visible */}
+          <h2 className="section-title">Stwórz swój turniej</h2>
+          <h3 className="group-title">Chcesz zorganizować turniej? Daj swoją propozycje.</h3>
+          <div className="cards-grid" style={{ marginTop: 18 }}>
+              <div className="create-block" style={{ gridColumn: '1 / -1' }}>
+                <div className="hero-create">
+                  <img src="/src/img/szatnia.jpg" alt="Create Tournament" />
+                  <div className="hero-inner">
+                    <p style={{ margin: '20px', color: 'var(--muted)' }}>Masz pomysł na własne rozgrywki? Zorganizuj turniej dla swojej społeczności! Wypełnij krótki formularz, a my pomożemy Ci to zrealizować. Po poprawnym wypełnieniu i akceptacji przez administratora, Twój turniej zostanie opublikowany i wszyscy będą mogli się do niego zapisać.</p>
+                    <div style={{ marginTop: 12 }}>
+                      <Link to="/create-tournament" style={{ display: 'inline-block', background: 'var(--accent-blue)', color: '#fff', padding: '10px 14px', margin: '10px 0 20px', borderRadius: 20, textDecoration: 'none' }}>Stwórz turniej</Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+          </div>
 
-        <label>
-          Status:
-          <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value as any)} style={{ marginLeft: 8 }}>
-            <option value="all">All</option>
-            <option value="upcoming">Nadchodzące</option>
-            <option value="ongoing">W trakcie</option>
-            <option value="finished">Zakończone</option>
-          </select>
-        </label>
-      </div>
+          <h3 className="group-title">W trakcie</h3>
+          <div className="cards-grid">{withMeta.filter((w)=>{
+            const text = ((w.t.wojewodztwo ?? w.t.lokalizacja) || '').toString()
+            const matchesWoj = selectedWoj === 'All' ? true : text.toLowerCase().includes(selectedWoj.toLowerCase())
+            return w.status === 'ongoing' && w.t.dyscyplina === selectedDiscipline && matchesWoj
+          }).map(renderCard)}</div>
 
-      {/* Grid: 3 columns */}
-      <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(3, 1fr)' }}>
-        {filtered.length === 0 ? <div>Brak turniejów dla wybranych filtrów.</div> : filtered.map(renderCard)}
-      </div>
+          <h3 className="group-title">Zakończone</h3>
+          <div className="cards-grid">{withMeta.filter((w)=>{
+            const text = ((w.t.wojewodztwo ?? w.t.lokalizacja) || '').toString()
+            const matchesWoj = selectedWoj === 'All' ? true : text.toLowerCase().includes(selectedWoj.toLowerCase())
+            return w.status === 'finished' && w.t.dyscyplina === selectedDiscipline && matchesWoj
+          }).map(renderCard)}</div>
+        </>
+      ) : (
+        <>
+          <h3 className="group-title">{selectedStatus === 'upcoming' ? 'Nadchodzące' : selectedStatus === 'ongoing' ? 'W trakcie' : 'Zakończone'}</h3>
+            <div className="cards-grid">{filtered.length === 0 ? <div>Brak turniejów dla wybranych filtrów.</div> : filtered.map(renderCard)}</div>
+
+            {/* Always show the create block after the selected-status block */}
+            <h2 className="section-title">Stwórz swój turniej</h2>
+            <h3 className="group-title">Chcesz zorganizować turniej? Daj swoją propozycje.</h3>
+            <div className="cards-grid" style={{ marginTop: 18 }}>
+                <div className="create-block" style={{ gridColumn: '1 / -1' }}>
+                  <div className="hero-create">
+                    <img src="/src/img/szatnia.jpg" alt="Create Tournament" />
+                    <div className="hero-inner">
+                      <p style={{ margin: '20px', color: 'var(--muted)' }}>Masz pomysł na własne rozgrywki? Zorganizuj turniej dla swojej społeczności! Wypełnij krótki formularz, a my pomożemy Ci to zrealizować. Po poprawnym wypełnieniu i akceptacji przez administratora, Twój turniej zostanie opublikowany i wszyscy będą mogli się do niego zapisać.</p>
+                      <div style={{ marginTop: 12 }}>
+                        <Link to="/create-tournament" style={{ display: 'inline-block', background: 'var(--accent-blue)', color: '#fff', padding: '10px 14px', margin: '10px 0 20px', borderRadius: 20, textDecoration: 'none' }}>Stwórz turniej</Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+        </>
+      )}
     </div>
   )
 }
+

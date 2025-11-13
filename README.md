@@ -14,7 +14,7 @@
 2. Funkcjonalności  
 3. Stos technologiczny (Stack)  
 4. Logika turniejów (Tournament Engine)  
-5. Style i komponenty  
+5. Style i komponenty
 
 ---
 
