@@ -46,93 +46,83 @@ export default function TeamsPage() {
   }, [filterName, filterDyscyplina, filterWoj])
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Drużyny</h2>
+    <div className="page-content">
+      <h1 className="section-title">Znajdź drużynę</h1>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-        <input placeholder="Filtruj po nazwie" value={filterName} onChange={(e) => setFilterName(e.target.value)} />
-        <select value={filterDyscyplina} onChange={(e) => setFilterDyscyplina(e.target.value)}>
-          <option value="">Wszystkie dyscypliny</option>
-          <option value="Pilka nozna">Piłka nożna</option>
-          <option value="Szachy">Szachy</option>
-        </select>
-        <select value={filterWoj} onChange={(e) => setFilterWoj(e.target.value)}>
-          <option value="">Wszystkie województwa</option>
-          <option value="Dolnośląskie">Dolnośląskie</option>
-          <option value="Kujawsko-pomorskie">Kujawsko-pomorskie</option>
-          <option value="Lubelskie">Lubelskie</option>
-          <option value="Lubuskie">Lubuskie</option>
-          <option value="Łódzkie">Łódzkie</option>
-          <option value="Małopolskie">Małopolskie</option>
-          <option value="Mazowieckie">Mazowieckie</option>
-          <option value="Opolskie">Opolskie</option>
-          <option value="Podkarpackie">Podkarpackie</option>
-          <option value="Podlaskie">Podlaskie</option>
-          <option value="Pomorskie">Pomorskie</option>
-          <option value="Śląskie">Śląskie</option>
-          <option value="Świętokrzyskie">Świętokrzyskie</option>
-          <option value="Warmińsko-mazurskie">Warmińsko-mazurskie</option>
-          <option value="Wielkopolskie">Wielkopolskie</option>
-          <option value="Zachodniopomorskie">Zachodniopomorskie</option>
-        </select>
-        <button onClick={() => { setFilterName(''); setFilterDyscyplina(''); setFilterWoj('') }}>Wyczyść</button>
+      <div className="filters-center">
+        <input className="search" placeholder="Szukaj drużyny..." value={filterName} onChange={(e) => setFilterName(e.target.value)} />
+
+        <div style={{ marginTop: 8, width: '100%', display: 'flex', justifyContent: 'center' }}>
+          <div className="advanced-filters">
+            <select value={filterWoj} onChange={(e) => setFilterWoj(e.target.value)}>
+              <option value="">Województwo</option>
+              <option value="Dolnośląskie">Dolnośląskie</option>
+              <option value="Kujawsko-pomorskie">Kujawsko-pomorskie</option>
+              <option value="Lubelskie">Lubelskie</option>
+              <option value="Lubuskie">Lubuskie</option>
+              <option value="Łódzkie">Łódzkie</option>
+              <option value="Małopolskie">Małopolskie</option>
+              <option value="Mazowieckie">Mazowieckie</option>
+              <option value="Opolskie">Opolskie</option>
+              <option value="Podkarpackie">Podkarpackie</option>
+              <option value="Podlaskie">Podlaskie</option>
+              <option value="Pomorskie">Pomorskie</option>
+              <option value="Śląskie">Śląskie</option>
+              <option value="Świętokrzyskie">Świętokrzyskie</option>
+              <option value="Warmińsko-mazurskie">Warmińsko-mazurskie</option>
+              <option value="Wielkopolskie">Wielkopolskie</option>
+              <option value="Zachodniopomorskie">Zachodniopomorskie</option>
+            </select>
+
+            <select value={filterDyscyplina} onChange={(e) => setFilterDyscyplina(e.target.value)}>
+              <option value="">Dyscyplina</option>
+              <option value="Pilka nozna">Piłka nożna</option>
+              <option value="Szachy">Szachy</option>
+            </select>
+
+            <button className="ghost" onClick={() => { setFilterName(''); setFilterDyscyplina(''); setFilterWoj('') }}>Wyczyść</button>
+          </div>
+        </div>
       </div>
 
       {loading ? (
-        <div>Ładowanie...</div>
+        <div style={{ padding: 18 }}>Ładowanie...</div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Logo</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Nazwa</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Członków</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Dyscyplina</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Województwo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teams.map((t) => (
-              <tr key={t.druzyna_id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                <td style={{ padding: 8 }}>
-                  {(() => {
-                    const src = (function getSrc() {
-                      // dynamic import of logo map would be ideal; we can try to handle common cases
-                      if (!t.logo) return null
-                      if (t.logo.startsWith('http') || t.logo.startsWith('/')) return t.logo
-                      // else, treat as asset id like 'logo1'
-                      try {
-                        // require is not available in Vite TS; instead, use a small map inline
+        <div className="teams-list" style={{ marginTop: 18 }}>
+          {teams.map((t) => (
+            <Link to={`/teams/${t.druzyna_id}`} key={t.druzyna_id} className="team-card">
+              <div className="team-content">
+                <div className="team-left">
+                  <div className="team-icon">
+                    {(() => {
+                      const src = (function getSrc() {
+                        if (!t.logo) return null
+                        if (t.logo.startsWith('http') || t.logo.startsWith('/')) return t.logo
                         const map: Record<string, string> = {
                           logo1: '/src/assets/logos/logo1.svg',
                           logo2: '/src/assets/logos/logo2.svg',
                           logo3: '/src/assets/logos/logo3.svg',
                         }
                         return map[t.logo] ?? null
-                      } catch (e) {
-                        return null
-                      }
-                    })()
-                    return src ? <img src={src} alt="logo" style={{ width: 48, height: 48, objectFit: 'contain' }} /> : <div style={{ width: 48, height: 48, background: '#f7f7f7', color: '#213547' }} />
-                  })()}
-                </td>
-                <td style={{ padding: 8 }}>
-                  <Link to={`/teams/${t.druzyna_id}`}>{t.nazwa_druzyny}</Link>
-                </td>
-                <td style={{ padding: 8, textAlign: 'center' }}>
-                  {(() => {
-                    const count = t.liczba_czlonkow ?? 0
-                    if (t.dyscyplina === 'Pilka nozna') return `${count}/16`
-                    return `${count}`
-                  })()}
-                </td>
-                <td style={{ padding: 8 }}>{t.dyscyplina}</td>
-                <td style={{ padding: 8 }}>{t.wojewodztwo}</td>
-                {/* Owner and created columns removed */}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      })()
+                      return src ? <img src={src} alt="logo" style={{ width: 56, height: 56, objectFit: 'contain' }} /> : <div style={{ width: 56, height: 56 }} />
+                    })()}
+                  </div>
+                  <div className="team-name">{t.nazwa_druzyny}</div>
+                </div>
+
+                <div className="team-center">
+                  <div className="team-prov">{t.wojewodztwo || ''}</div>
+                </div>
+
+                <div className="team-right">
+                  <div className="team-discipline">{t.dyscyplina || ''}</div>
+                  <div className="team-count">{(t.liczba_czlonkow ?? 0) + (t.dyscyplina === 'Pilka nozna' ? '/16' : '')}</div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   )

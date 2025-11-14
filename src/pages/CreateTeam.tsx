@@ -106,7 +106,7 @@ export default function CreateTeamPage() {
   }
 
   return (
-    <div style={{ padding: 20, maxWidth: 720, margin: '0 auto' }}>
+    <div style={{ padding: 20, maxWidth: 720, margin: '0 auto', textAlign: 'left' }}>
       <h2>Załóż swoją drużynę</h2>
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
         <label>
@@ -158,12 +158,13 @@ export default function CreateTeamPage() {
           Dyscyplina
           <select value={dyscyplina} onChange={(e) => setDyscyplina(e.target.value)} style={{ width: '100%', padding: 8 }}>
             <option value="Pilka nozna">Piłka nożna</option>
+            <option value="Siatkowka">Siatkówka</option>
             {/* Szachy nie obsługuje drużyn — nie pokazujemy tej opcji */}
           </select>
         </label>
 
-        <div>
-          <button type="submit" disabled={loading} style={{ padding: '8px 12px' }}>
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <button type="submit" disabled={loading} style={{ padding: '10px 15px', background: '#22C55E', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
             {loading ? 'Tworzenie…' : 'Załóż drużynę'}
           </button>
         </div>

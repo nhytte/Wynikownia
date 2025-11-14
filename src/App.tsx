@@ -14,30 +14,26 @@ import CreateTournament from './pages/CreateTournament'
 import { useAuth0 } from '@auth0/auth0-react'
 import supabase from './lib/supabaseClient'
 import { emailLocal } from './lib/displayName'
-import { getAppBaseUrl } from './lib/url'
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=sports_soccer" />
 
 function App() {
-  const { isAuthenticated, isLoading, user, logout } = useAuth0()
+  const { isAuthenticated, isLoading, user } = useAuth0()
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('Pilka nozna')
-  const [userRole, setUserRole] = useState<string | null>(null)
   const [userFullName, setUserFullName] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchRole = async () => {
-      if (!isAuthenticated || !user) { setUserRole(null); return }
+    const fetchProfile = async () => {
+      if (!isAuthenticated || !user) { setUserFullName(null); return }
       try {
         const uid = (user as any).sub
-        const { data } = await supabase.from('uzytkownicy').select('rola, imie, nazwisko, nazwa_wyswietlana, email').eq('user_id', uid).single()
-        setUserRole(data?.rola ?? null)
+        const { data } = await supabase.from('uzytkownicy').select('imie, nazwisko, nazwa_wyswietlana, email').eq('user_id', uid).single()
         const full = ((data?.imie || '') + ' ' + (data?.nazwisko || '')).trim()
         setUserFullName(data?.nazwa_wyswietlana || (full.length ? full : null) || null)
       } catch (e) {
-        setUserRole(null)
         setUserFullName(null)
       }
     }
-    fetchRole()
+    fetchProfile()
   }, [isAuthenticated, user])
 
   return (
@@ -56,11 +52,9 @@ function App() {
             <span className="small-muted">Loading...</span>
           ) : isAuthenticated ? (
             <>
-              <span className="user-name">{userFullName || (user as any)?.name || emailLocal((user as any)?.email)}</span>
-              <button className="ghost" onClick={() => logout({ logoutParams: { returnTo: getAppBaseUrl() } })}>Wyloguj</button>
-              <Link to="/teams"><button className="ghost">Drużyny</button></Link>
-              <Link to="/profile"><button className="ghost">Profil</button></Link>
-              {userRole === 'Administrator' ? <Link to="/admin"><button className="ghost">Admin</button></Link> : null}
+              <Link to="/create-team"><button className="ghost">Stwórz drużynę</button></Link>
+              <Link to="/teams"><button className="ghost">Znajdź drużynę</button></Link>
+              <Link to="/profile"><button className="ghost">{userFullName || (user as any)?.name || emailLocal((user as any)?.email)}</button></Link>
             </>
           ) : (
             <Link to="/login"><button className="primary">Zaloguj się</button></Link>

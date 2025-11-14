@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import supabase from '../lib/supabaseClient'
 import { emailLocal } from '../lib/displayName'
 import { useAuth0 } from '@auth0/auth0-react'
@@ -19,9 +19,7 @@ type Team = {
 export default function TeamDetail() {
   const { id } = useParams<{ id: string }>()
   const [team, setTeam] = useState<Team | null>(null)
-  const [ownerName, setOwnerName] = useState<string | null>(null)
   const [members, setMembers] = useState<any[]>([])
-  const [pendingRequests, setPendingRequests] = useState<any[]>([])
   const [currentSignups, setCurrentSignups] = useState<any[]>([])
   const [pastSignups, setPastSignups] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -36,29 +34,13 @@ export default function TeamDetail() {
       if (error) throw error
       setTeam(teamData as Team)
 
-      // fetch owner display name
-      if (teamData?.owner_id) {
-        try {
-          const { data: ownerUser } = await supabase.from('uzytkownicy').select('user_id, nazwa_wyswietlana, email').eq('user_id', teamData.owner_id).single()
-          if (ownerUser) {
-            setOwnerName(ownerUser.nazwa_wyswietlana || emailLocal(ownerUser.email) || ownerUser.user_id)
-          }
-        } catch (e) {
-          // ignore
-        }
-      }
+      // owner display name not currently used in UI
 
       // members (accepted)
   const { data: membersData } = await supabase.from('teammembers').select('*, uzytkownicy(nazwa_wyswietlana, imie, nazwisko, email)').eq('druzyna_id', Number(id)).eq('status', 'accepted')
       setMembers((membersData as any[]) || [])
 
-      // pending join requests for this team
-      try {
-  const { data: reqs } = await supabase.from('teammembers').select('*, uzytkownicy(nazwa_wyswietlana, imie, nazwisko, email)').eq('druzyna_id', Number(id)).eq('status', 'pending')
-        setPendingRequests((reqs as any[]) || [])
-      } catch (e) {
-        setPendingRequests([])
-      }
+      // pending join requests are not shown in this simplified layout
 
       // signups to tournaments: look into Zapisy table filtering by team? If Zapisy stores team info, adapt. We'll fetch Zapisy where nazwa_druzyny matches as a fallback.
   const { data: current } = await supabase.from('zapisy').select('*, turnieje(*)').eq('status', 'Zaakceptowany').eq('nazwa_druzyny', teamData?.nazwa_druzyny)
@@ -77,6 +59,9 @@ export default function TeamDetail() {
     fetchDetail()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  const currentUserId = (user as any)?.sub
+  const isMember = Boolean(members.find((m) => (m.user_id && m.user_id === currentUserId) || (m.uzytkownicy && m.uzytkownicy.user_id === currentUserId)))
 
   const handleJoin = async () => {
     if (!isAuthenticated || !user) return navigate('/login')
@@ -122,141 +107,155 @@ export default function TeamDetail() {
     }
   }
 
-  const handleRequestDecision = async (memberId: number, decision: 'accepted' | 'rejected') => {
+  const handleEditDescription = async () => {
+    if (!isAuthenticated || !user) return navigate('/login')
+    const newDesc = prompt('Edytuj opis drużyny', team?.opis || '')
+    if (newDesc === null) return
     try {
-      const { error } = await supabase.from('teammembers').update({ status: decision, responded_at: new Date() }).eq('member_id', memberId)
+      const { error } = await supabase.from('druzyny').update({ opis: newDesc }).eq('druzyna_id', Number(id))
       if (error) throw error
-      // refresh lists
-      await fetchDetail()
-    } catch (err) {
-      console.error(err)
-      alert('Nie udało się przetworzyć żądania')
+      setTeam((t) => (t ? { ...t, opis: newDesc } : t))
+      alert('Opis został zaktualizowany')
+    } catch (e) {
+      console.error(e)
+      alert('Aktualizacja opisu nie powiodła się')
     }
   }
+
+  // request decision handler removed (not used in current layout)
 
   if (loading) return <div style={{ padding: 20 }}>Ładowanie…</div>
   if (!team) return <div style={{ padding: 20 }}>Drużyna nie znaleziona</div>
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>{team.nazwa_druzyny}</h2>
-      <div style={{ display: 'flex', gap: 20 }}>
-        <div style={{ width: 160 }}>
-          {team.logo ? (
-            (() => {
-              const src = getLogoSrc(team.logo)
-              return src ? <img src={src} alt="logo" style={{ width: 160 }} /> : <div style={{ width: 160, height: 160, background: '#f0f0f0', color: '#213547' }} />
-            })()
-          ) : (
-            <div style={{ width: 160, height: 160, background: '#f0f0f0', color: '#213547' }} />
-          )}
+    <div className="page-content">
+      <h1 style={{ textAlign: 'center', fontFamily: 'Lora, serif' }}>{team.nazwa_druzyny}</h1>
+
+      <div className="panel" style={{ padding: 18 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {team.logo ? (
+              (() => {
+                const src = getLogoSrc(team.logo)
+                return src ? <img src={src} alt="logo" style={{ width: 220, height: 220, objectFit: 'contain', borderRadius: 12 }} /> : <div style={{ width: 220, height: 220, background: '#0b1116', borderRadius: 12 }} />
+              })()
+            ) : (
+              <div style={{ width: 220, height: 220, background: '#0b1116', borderRadius: 12 }} />
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 16 }}>{team.opis || 'Brak opisu'}</p>
+          </div>
         </div>
-        <div style={{ flex: 1 }}>
-          <p><strong>Dyscyplina:</strong> {team.dyscyplina}</p>
-          <p><strong>Województwo:</strong> {team.wojewodztwo}</p>
-          <p><strong>Opis:</strong> {team.opis}</p>
-          <p><strong>Właściciel:</strong> {ownerName ?? team.owner_id}</p>
-          <div style={{ marginTop: 12 }}>
-            <button onClick={handleJoin}>Dołącz do drużyny (wyślij prośbę)</button>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 18, alignItems: 'center', textAlign: 'center' }}>
+          <div style={{ background: '#0f172a', padding: 14, borderRadius: 8 }}>
+            <div style={{ color: 'var(--muted)', fontSize: 13 }}>Województwo</div>
+            <div style={{ color: '#fff', fontWeight: 700 }}>{team.wojewodztwo || '—'}</div>
+          </div>
+
+          <div style={{ background: '#0f172a', padding: 14, borderRadius: 8 }}>
+            <div style={{ color: 'var(--muted)', fontSize: 13 }}>Dyscyplina</div>
+            <div style={{ color: '#fff', fontWeight: 700 }}>{team.dyscyplina || '—'}</div>
+          </div>
+
+          <div style={{ background: '#0f172a', padding: 14, borderRadius: 8 }}>
+            <div style={{ color: 'var(--muted)', fontSize: 13 }}>Liczba osób</div>
+            <div style={{ color: '#fff', fontWeight: 700 }}>{members.length}</div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
             {isAuthenticated && (user as any).sub === team?.owner_id ? (
-              <button
-                onClick={async () => {
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="td-btn td-danger" onClick={async () => {
                   if (!confirm('Na pewno chcesz usunąć tę drużynę? Ta operacja usunie również wszystkie powiązane zgłoszenia i członkostwa.')) return
                   try {
-                    // delete related team members first
                     await supabase.from('teammembers').delete().eq('druzyna_id', Number(id))
-                  } catch (e) {
-                    console.warn('Could not delete team members', e)
-                  }
-
+                  } catch (e) { console.warn('Could not delete team members', e) }
                   try {
                     const { error } = await supabase.from('druzyny').delete().eq('druzyna_id', Number(id))
                     if (error) throw error
                     alert('Drużyna została usunięta')
-                    // redirect to teams list
                     navigate('/teams')
-                  } catch (e) {
-                    console.error(e)
-                    alert('Usuwanie drużyny nie powiodło się')
-                  }
-                }}
-                style={{ marginLeft: 12, background: '#c62828', color: 'white', border: 'none', padding: '6px 10px', borderRadius: 4 }}
-              >
-                Usuń drużynę
-              </button>
-            ) : null}
+                  } catch (e) { console.error(e); alert('Usuwanie drużyny nie powiodło się') }
+                }}>Usuń drużynę</button>
+
+                <button className="td-btn td-edit" onClick={handleEditDescription}>Edytuj opis</button>
+              </div>
+            ) : isMember ? (
+              <button className="td-btn td-danger" onClick={async () => {
+                if (!confirm('Na pewno chcesz opuścić tę drużynę?')) return
+                try {
+                  const uid = (user as any).sub
+                  const { error } = await supabase.from('teammembers').delete().eq('druzyna_id', Number(id)).eq('user_id', uid)
+                  if (error) throw error
+                  alert('Opuściłeś drużynę')
+                  await fetchDetail()
+                } catch (e) { console.error(e); alert('Nie udało się opuścić drużyny') }
+              }}>Opuść drużynę</button>
+            ) : (
+              <button className="td-btn td-blue" onClick={handleJoin}>Dołącz do drużyny</button>
+            )}
           </div>
         </div>
       </div>
 
-      <h3 style={{ marginTop: 20 }}>Aktualni zawodnicy</h3>
-      <ul>
-        {members.map((m) => (
-          <li key={m.member_id}>
-            {m.uzytkownicy?.nazwa_wyswietlana || ((m.uzytkownicy?.imie || m.uzytkownicy?.nazwisko) ? `${m.uzytkownicy?.imie ?? ''} ${m.uzytkownicy?.nazwisko ?? ''}`.trim() : '') || emailLocal(m.uzytkownicy?.email) || m.user_id}
-            {isAuthenticated && (user as any).sub === team?.owner_id ? (
-              <button onClick={async () => {
-                if (!confirm('Na pewno usunąć tego użytkownika z drużyny?')) return
-                try {
-                  const { error } = await supabase.from('teammembers').delete().eq('member_id', m.member_id)
-                  if (error) throw error
-                  await fetchDetail()
-                } catch (e) {
-                  console.error(e)
-                  alert('Nie udało się usunąć użytkownika')
-                }
-              }} style={{ marginLeft: 8 }}>Usuń</button>
-            ) : null}
-          </li>
-        ))}
-      </ul>
+      <div className="panel">
+        <h3 style={{ marginTop: 0 }}>Aktualni zawodnicy</h3>
+        <div className="teams-list" style={{ marginTop: 8 }}>
+          {members.map((m) => (
+            <div key={m.member_id} className="team-row">
+              <div className="team-left">
+                <div className="team-icon">👤</div>
+                <div>
+                  <div className="team-name">{m.uzytkownicy?.nazwa_wyswietlana || ((m.uzytkownicy?.imie || m.uzytkownicy?.nazwisko) ? `${m.uzytkownicy?.imie ?? ''} ${m.uzytkownicy?.nazwisko ?? ''}`.trim() : '') || emailLocal(m.uzytkownicy?.email) || m.user_id}</div>
+                  <div className="team-prov">{m.role || ''}</div>
+                </div>
+              </div>
+              <div className="team-right">
+                {isAuthenticated && (user as any).sub === team?.owner_id ? (
+                  <button className="td-btn td-ghost" onClick={async () => {
+                    if (!confirm('Na pewno usunąć tego użytkownika z drużyny?')) return
+                    try {
+                      const { error } = await supabase.from('teammembers').delete().eq('member_id', m.member_id)
+                      if (error) throw error
+                      await fetchDetail()
+                    } catch (e) { console.error(e); alert('Nie udało się usunąć użytkownika') }
+                  }}>Usuń</button>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <h3>Prośby o dołączenie</h3>
-      {pendingRequests.length === 0 ? (
-        <p>Brak oczekujących próśb</p>
-      ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: 8 }}>Użytkownik</th>
-              <th style={{ textAlign: 'left', padding: 8 }}>Email</th>
-              <th style={{ padding: 8 }}>Akcje</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pendingRequests.map((r) => (
-              <tr key={r.member_id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: 8 }}>{r.uzytkownicy?.nazwa_wyswietlana || ((r.uzytkownicy?.imie || r.uzytkownicy?.nazwisko) ? `${r.uzytkownicy?.imie ?? ''} ${r.uzytkownicy?.nazwisko ?? ''}`.trim() : '') || emailLocal(r.uzytkownicy?.email) || r.user_id}</td>
-                <td style={{ padding: 8 }}>{r.uzytkownicy?.email || ''}</td>
-                <td style={{ padding: 8 }}>
-                  {isAuthenticated && (user as any).sub === team?.owner_id ? (
-                    <>
-                      <button onClick={() => handleRequestDecision(r.member_id, 'accepted')} style={{ marginRight: 8 }}>Akceptuj</button>
-                      <button onClick={() => handleRequestDecision(r.member_id, 'rejected')}>Odrzuć</button>
-                    </>
-                  ) : (
-                    <span>Brak uprawnień</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <div className="panel">
+        <h3 style={{ marginTop: 0 }}>Aktualne zapisy do turniejów</h3>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {currentSignups.map((s, idx) => (
+            <div key={idx} className="tournament-row">
+              <div style={{ textAlign: 'left' }}>
+                <Link to={`/tournaments/${s.turnieje?.turniej_id ?? s.turniej_id}`} className="tournament-left">{s.turnieje?.nazwa || s.turniej_id}</Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <h3>Aktualne zapisy do turniejów</h3>
-      <ul>
-        {currentSignups.map((s, idx) => (
-          <li key={idx}>{s.turnieje?.nazwa || s.turniej_id}</li>
-        ))}
-      </ul>
-
-      <h3>Poprzednie zapisy</h3>
-      <ul>
-        {pastSignups.map((s, idx) => (
-          <li key={idx}>{s.turnieje?.nazwa || s.turniej_id} — status: {s.status}</li>
-        ))}
-      </ul>
+      <div className="panel">
+        <h3 style={{ marginTop: 0 }}>Poprzednie zapisy</h3>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {pastSignups.map((s, idx) => (
+            <div key={idx} className="tournament-row">
+              <div style={{ textAlign: 'left' }}>
+                <Link to={`/tournaments/${s.turnieje?.turniej_id ?? s.turniej_id}`} className="tournament-left">{s.turnieje?.nazwa || s.turniej_id}</Link>
+                <div className="tournament-mid">— status: {s.status}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
