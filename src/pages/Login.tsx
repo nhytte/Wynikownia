@@ -59,7 +59,6 @@ export default function LoginPage() {
         <div style={{ marginTop: 8 }}>
           <div style={{ marginBottom: 8, color: '#6b7280' }}>kontynuuj z</div>
           <button className="login-google" onClick={handleGoogle} aria-label="Zaloguj się z Google">
-            <img src="/logo.svg" alt="logo" />
             <span>Zaloguj się z Google</span>
           </button>
         </div>
