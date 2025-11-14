@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
-import logoImg from '../img/Logo.svg'
+
 
 export default function LoginPage() {
   const { loginWithRedirect, logout, isAuthenticated, user, isLoading } = useAuth0()
@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card" role="main" aria-labelledby="login-title">
-        <div className="brand-icon"><img src={logoImg} alt="Wynikownia" style={{ width: 48, height: 48 }} /></div>
+        <div className="brand-icon"><img src="src/img/logo.svg" alt="Wynikownia" style={{ width: 48, height: 48 }} /></div>
         <h2 id="login-title">Witaj ponownie</h2>
         <p className="sub">Zaloguj się do swojego konta</p>
 
