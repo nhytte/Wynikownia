@@ -300,42 +300,33 @@ export default function AdminPanel() {
   if (role !== 'Administrator') return <div style={{ padding: 20 }}>Brak dostępu. Panel administracyjny dostępny tylko dla Administratorów.</div>
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Panel administratora</h2>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <button onClick={() => setActiveTab('teams')} style={{ fontWeight: activeTab === 'teams' ? 700 : 400 }}>Drużyny</button>
-        <button onClick={() => setActiveTab('users')} style={{ fontWeight: activeTab === 'users' ? 700 : 400 }}>Użytkownicy</button>
-        <button onClick={() => setActiveTab('tournaments')} style={{ fontWeight: activeTab === 'tournaments' ? 700 : 400 }}>Turnieje</button>
+    <div className="page-content">
+      <h2 style={{ marginTop: 6 }}>Panel administratora</h2>
+      <div className="tabs" role="tablist" aria-label="Panel administratora">
+        <button className={`tab-pill ${activeTab === 'teams' ? 'active' : ''}`} onClick={() => setActiveTab('teams')}>Drużyny</button>
+        <button className={`tab-pill ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Użytkownicy</button>
+        <button className={`tab-pill ${activeTab === 'tournaments' ? 'active' : ''}`} onClick={() => setActiveTab('tournaments')}>Turnieje</button>
       </div>
 
       {activeTab === 'teams' && (
         <div>
-          <h3>Drużyny</h3>
+          <h3 style={{ marginBottom: 12 }}>Drużyny</h3>
           {loadingTeams ? <p>Ładowanie…</p> : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left', padding: 8 }}>Nazwa</th>
-                  <th style={{ textAlign: 'left', padding: 8 }}>Dyscyplina</th>
-                  <th style={{ padding: 8 }}>Akcje</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teams.map(t => (
-                  <tr key={t.druzyna_id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-                      {t.logo ? <img src={getLogoSrc(t.logo) ?? undefined} alt="logo" style={{ width: 36 }} /> : null}
-                      {t.nazwa_druzyny}
-                    </td>
-                    <td style={{ padding: 8 }}>{t.dyscyplina}</td>
-                    <td style={{ padding: 8 }}>
-                      <button onClick={() => openTeamDetails(t)} style={{ marginRight: 8 }}>Przejrzyj</button>
-                      <button onClick={() => deleteTeam(t.druzyna_id)} style={{ background: '#c62828', color: 'white', border: 'none', padding: '6px 8px', borderRadius: 4 }}>Usuń</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {teams.map(t => (
+                <div key={t.druzyna_id} className="tournament-row">
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    {t.logo ? <img src={getLogoSrc(t.logo) ?? undefined} alt="logo" style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8 }} /> : null}
+                    <div className="tournament-left">{t.nazwa_druzyny}</div>
+                  </div>
+                  <div className="tournament-mid">{t.dyscyplina}</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button className="td-btn td-edit" onClick={() => openTeamDetails(t)}>Przejrzyj</button>
+                    <button className="td-btn td-danger" onClick={() => deleteTeam(t.druzyna_id)}>Usuń</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -464,28 +455,20 @@ export default function AdminPanel() {
         <div>
           <h3>Użytkownicy</h3>
           {loadingUsers ? <p>Ładowanie…</p> : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left', padding: 8 }}>Nazwa</th>
-                  <th style={{ textAlign: 'left', padding: 8 }}>Email</th>
-                  <th style={{ padding: 8 }}>Rola</th>
-                  <th style={{ padding: 8 }}>Akcje</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.user_id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: 8 }}>{u.nazwa_wyswietlana || ((u.imie || u.nazwisko) ? `${u.imie ?? ''} ${u.nazwisko ?? ''}`.trim() : '') || emailLocal(u.email) || u.user_id}</td>
-                    <td style={{ padding: 8 }}>{u.email}</td>
-                    <td style={{ padding: 8 }}>{u.rola}</td>
-                    <td style={{ padding: 8 }}>
-                      <button onClick={() => deleteUser(u.user_id)} style={{ background: '#c62828', color: 'white', border: 'none', padding: '6px 8px', borderRadius: 4 }}>Usuń</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {users.map(u => (
+                <div key={u.user_id} className="tournament-row">
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nazwa_wyswietlana || ((u.imie || u.nazwisko) ? `${u.imie ?? ''} ${u.nazwisko ?? ''}`.trim() : '') || emailLocal(u.email) || u.user_id}</div>
+                    <div className="tournament-mid" style={{ color: 'var(--muted)', fontSize: 13 }}>{u.email}</div>
+                  </div>
+                  <div className="tournament-mid">{u.rola}</div>
+                  <div>
+                    <button className="td-btn td-danger" onClick={() => deleteUser(u.user_id)}>Usuń</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -515,71 +498,47 @@ export default function AdminPanel() {
               {loadingProposals ? <p>Ładowanie propozycji…</p> : proposals && proposals.length > 0 ? (
                 <div style={{ marginBottom: 12 }}>
                   <h4>Propozycje turniejów</h4>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Nazwa</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Dyscyplina</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Województwo</th>
-                        <th style={{ padding: 8 }}>Status</th>
-                        <th style={{ padding: 8 }}>Akcje</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {proposals.map((p) => (
-                        <tr key={p.propozycja_id} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ padding: 8 }}>{p.sugerowana_nazwa}</td>
-                          <td style={{ padding: 8 }}>{p.sugerowana_dyscyplina}</td>
-                          <td style={{ padding: 8 }}>{p.sugerowana_wojewodztwo || '-'}</td>
-                          <td style={{ padding: 8 }}>{p.status}</td>
-                          <td style={{ padding: 8 }}>
-                            <button onClick={() => setReviewing(p)}>Przejrzyj</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
+                    {proposals.map((p) => (
+                      <div key={p.propozycja_id} className="tournament-row">
+                        <div style={{ fontWeight: 700 }}>{p.sugerowana_nazwa}</div>
+                        <div className="tournament-mid">{p.sugerowana_dyscyplina} — {p.sugerowana_wojewodztwo || '-'}</div>
+                        <div>
+                          <button className="td-btn td-edit" onClick={() => setReviewing(p)}>Przejrzyj</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
               {loadingTournaments ? <p>Ładowanie…</p> : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left', padding: 8 }}>Nazwa</th>
-                  <th style={{ textAlign: 'left', padding: 8 }}>Dyscyplina</th>
-                  <th style={{ padding: 8 }}>Data rozpoczęcia</th>
-                  <th style={{ padding: 8 }}>Akcje</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  const now = new Date()
-                  const filtered = (tournaments || []).filter((t: any) => {
-                    if (filterDiscipline !== 'All' && t.dyscyplina !== filterDiscipline) return false
-                    if (filterStatus === 'All') return true
-                    const start = t.data_rozpoczecia ? new Date(t.data_rozpoczecia) : null
-                    if (!start) return false
-                    const sameDay = start.toDateString() === now.toDateString()
-                    let st: 'aktualne' | 'w_trakcie' | 'archiwalne'
-                    if (start > now) st = 'aktualne'
-                    else if (sameDay) st = 'w_trakcie'
-                    else st = 'archiwalne'
-                    return st === filterStatus
-                  })
-                  return filtered.map((t: any) => (
-                  <tr key={t.turniej_id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: 8 }}>{t.nazwa}</td>
-                    <td style={{ padding: 8 }}>{t.dyscyplina}</td>
-                    <td style={{ padding: 8 }}>{t.data_rozpoczecia ? new Date(t.data_rozpoczecia).toLocaleString() : ''}</td>
-                    <td style={{ padding: 8 }}>
-                      <button onClick={() => setViewingTournament(t)} style={{ marginRight: 8 }}>Przejrzyj</button>
-                      <button onClick={() => deleteTournament(t.turniej_id)} style={{ background: '#c62828', color: 'white', border: 'none', padding: '6px 8px', borderRadius: 4 }}>Usuń</button>
-                    </td>
-                  </tr>
-                  ))
-                })()}
-              </tbody>
-            </table>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {(() => {
+                    const now = new Date()
+                    const filtered = (tournaments || []).filter((t: any) => {
+                      if (filterDiscipline !== 'All' && t.dyscyplina !== filterDiscipline) return false
+                      if (filterStatus === 'All') return true
+                      const start = t.data_rozpoczecia ? new Date(t.data_rozpoczecia) : null
+                      if (!start) return false
+                      const sameDay = start.toDateString() === now.toDateString()
+                      let st: 'aktualne' | 'w_trakcie' | 'archiwalne'
+                      if (start > now) st = 'aktualne'
+                      else if (sameDay) st = 'w_trakcie'
+                      else st = 'archiwalne'
+                      return st === filterStatus
+                    })
+                    return filtered.map((t: any) => (
+                      <div key={t.turniej_id} className="tournament-row">
+                        <div className="tournament-left">{t.nazwa}</div>
+                        <div className="tournament-mid">{t.dyscyplina}</div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="td-btn td-edit" onClick={() => setViewingTournament(t)}>Przejrzyj</button>
+                          <button className="td-btn td-danger" onClick={() => deleteTournament(t.turniej_id)}>Usuń</button>
+                        </div>
+                      </div>
+                    ))
+                  })()}
+                </div>
           )}
         </div>
       )}

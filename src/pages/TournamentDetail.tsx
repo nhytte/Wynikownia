@@ -928,7 +928,7 @@ export default function TournamentDetail() {
               <div className="meta-card">
                 <h4><img src="/src/img/team.svg" alt="Drużyny"/>Drużyny</h4>
                 <div className="meta-value">{accepted.length} / {tournament.max_uczestnikow || '—'}</div>
-                <div className="meta-sub">{accepted.length} wolnych miejsc: {Math.max(0, (tournament.max_uczestnikow || 0) - accepted.length)}</div>
+                <div className="meta-sub">wolnych miejsc: {Math.max(0, (tournament.max_uczestnikow || 0) - accepted.length)}</div>
               </div>
               <div className="meta-card">
                 <h4><img src="/src/img/location.svg" alt="Lokalizacja"/>Lokalizacja</h4>

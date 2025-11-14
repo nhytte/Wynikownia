@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import supabase from '../lib/supabaseClient'
 import { deriveProvince } from '../lib/province'
@@ -7,6 +8,7 @@ import { getAppBaseUrl } from '../lib/url'
 
 export default function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuth0()
+  const [isAdmin, setIsAdmin] = useState(false)
   
   const [profile, setProfile] = useState<{ imie?: string; nazwisko?: string; nazwa_wyswietlana?: string } | null>(null)
   const [ownedTeams, setOwnedTeams] = useState<any[]>([])
@@ -20,8 +22,11 @@ export default function ProfilePage() {
     const uid = (user as any).sub
     try {
       // fetch profile data
-      const { data: u } = await supabase.from('uzytkownicy').select('imie, nazwisko, nazwa_wyswietlana, email').eq('user_id', uid).maybeSingle()
-      if (u) setProfile({ imie: u.imie ?? '', nazwisko: u.nazwisko ?? '', nazwa_wyswietlana: u.nazwa_wyswietlana ?? '' })
+      const { data: u } = await supabase.from('uzytkownicy').select('imie, nazwisko, nazwa_wyswietlana, email, rola').eq('user_id', uid).maybeSingle()
+      if (u) {
+        setProfile({ imie: u.imie ?? '', nazwisko: u.nazwisko ?? '', nazwa_wyswietlana: u.nazwa_wyswietlana ?? '' })
+        setIsAdmin((u.rola || '') === 'Administrator')
+      }
 
       const { data: owned } = await supabase.from('druzyny').select('*').eq('owner_id', uid)
       setOwnedTeams((owned as any[]) || [])
@@ -84,8 +89,11 @@ export default function ProfilePage() {
             { (user as any)?.picture ? <img src={(user as any).picture} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : <span>{(profile?.nazwa_wyswietlana || '').charAt(0).toUpperCase()}</span> }
           </div>
           <div className="display-name">{profile?.nazwa_wyswietlana || ((profile?.imie || profile?.nazwisko) ? `${profile?.imie ?? ''} ${profile?.nazwisko ?? ''}`.trim() : '') || emailLocal((user as any)?.email)}</div>
-          <div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 12 }}>
             <button className="logout-btn" onClick={() => logout({ logoutParams: { returnTo: getAppBaseUrl() } })}>Wyloguj</button>
+            {isAdmin && (
+              <Link to="/admin"><button className="ghost" style={{ background: '#000', color: '#fff' }}>Panel Admina</button></Link>
+            )}
           </div>
         </div>
       </div>
@@ -95,7 +103,7 @@ export default function ProfilePage() {
         {combinedTeams.length === 0 ? <div style={{ textAlign: 'center', color: 'var(--muted)' }}>Brak drużyn</div> : (
           <div className="teams-list">
             {combinedTeams.map((t: any) => (
-              <div key={t.druzyna_id} className="team-row">
+              <Link key={t.druzyna_id} to={`/teams/${t.druzyna_id}`} className="team-row" style={{ textDecoration: 'none' }}>
                 <div className="team-left">
                   <div className="team-icon">⚔️</div>
                   <div>
@@ -106,7 +114,7 @@ export default function ProfilePage() {
                 <div className="team-right">
                   <div className="team-count">{t.liczba_czlonkow ?? '-'}</div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -126,11 +134,11 @@ export default function ProfilePage() {
             const dateStr = start ? start.toLocaleDateString('pl-PL') : ''
             const prov = deriveProvince(`${t?.wojewodztwo ?? ''} ${t?.lokalizacja ?? ''}`)
             return (
-              <div key={z.zapis_id || z.turniej_id} className="tournament-row">
+              <Link key={z.zapis_id || z.turniej_id} to={`/tournaments/${t?.turniej_id || z.turniej_id}`} className="tournament-row" style={{ textDecoration: 'none' }}>
                 <div className="tournament-left">{t?.nazwa}</div>
                 <div className="tournament-mid">{prov || ''}</div>
                 <div className="date-pill">{dateStr}</div>
-              </div>
+              </Link>
             )
           })}
         </div>
