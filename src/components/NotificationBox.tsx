@@ -69,6 +69,23 @@ export default function NotificationBox() {
     }
   }
 
+  const deleteNotification = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation()
+    const { error } = await supabase
+      .from('powiadomienia')
+      .delete()
+      .eq('powiadomienie_id', id)
+
+    if (!error) {
+      setNotifications(prev => prev.filter(n => n.powiadomienie_id !== id))
+      // If it was unread, decrease count
+      const wasUnread = notifications.find(n => n.powiadomienie_id === id && !n.przeczytane)
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1))
+      }
+    }
+  }
+
   const handleNotificationClick = (n: Notification) => {
     if (!n.przeczytane) {
       markAsRead(n.powiadomienie_id)
@@ -131,13 +148,22 @@ export default function NotificationBox() {
                   <p>{n.tresc}</p>
                   <small>{new Date(n.created_at).toLocaleString()}</small>
                 </div>
-                {n.link ? (
-                  <Link to={n.link} onClick={() => handleNotificationClick(n)} className="notification-link">
-                    Zobacz
-                  </Link>
-                ) : (
-                  !n.przeczytane && <button onClick={() => markAsRead(n.powiadomienie_id)} className="mark-read-btn">OK</button>
-                )}
+                <div className="notification-actions">
+                  {n.link ? (
+                    <Link to={n.link} onClick={() => handleNotificationClick(n)} className="notification-link">
+                      Zobacz
+                    </Link>
+                  ) : (
+                    !n.przeczytane && <button onClick={() => markAsRead(n.powiadomienie_id)} className="mark-read-btn">OK</button>
+                  )}
+                  <button 
+                    className="delete-notif-btn" 
+                    onClick={(e) => deleteNotification(e, n.powiadomienie_id)}
+                    title="Usuń powiadomienie"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
             ))
           )}

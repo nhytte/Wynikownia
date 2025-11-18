@@ -2,19 +2,27 @@ import { useState } from 'react'
 import supabase from '../lib/supabaseClient'
 import { useAuth0 } from '@auth0/auth0-react'
 import { useNavigate } from 'react-router-dom'
-import logo1 from '../assets/logos/logo1.svg'
-import logo2 from '../assets/logos/logo2.svg'
-import logo3 from '../assets/logos/logo3.svg'
+import { TeamLogo } from '../components/TeamLogos.tsx'
+import { soccer } from '../lib/remoteImages'
 
 const LOGO_OPTIONS = [
-  { id: 'logo1', label: 'Złota tarcza', src: logo1 },
-  { id: 'logo2', label: 'Niebieska piłka', src: logo2 },
-  { id: 'logo3', label: 'Orzeł', src: logo3 },
+  { id: 'cat1', label: 'Kot 1' },
+  { id: 'cat2', label: 'Kot 2' },
+  { id: 'donkey', label: 'Osioł' },
+  { id: 'duck', label: 'Kaczka' },
+  { id: 'octopus', label: 'Ośmiornica' },
+  { id: 'tree', label: 'Drzewo' },
+  { id: 'turtle', label: 'Żółw' },
+  { id: 'unicorn', label: 'Jednorożec' },
+  { id: 'bear', label: 'Niedźwiedź' },
+  { id: 'dragon', label: 'Smok' },
 ]
 
 export default function CreateTeamPage() {
   const [nazwa, setNazwa] = useState('')
   const [logo, setLogo] = useState(LOGO_OPTIONS[0].id)
+  const [logoColor, setLogoColor] = useState('#ffffff') // Background color
+  const [logoFillColor, setLogoFillColor] = useState('#000000') // SVG fill color
   const [opis, setOpis] = useState('')
   const [wojewodztwo, setWojewodztwo] = useState('')
   const [dyscyplina, setDyscyplina] = useState('Pilka nozna')
@@ -67,6 +75,8 @@ export default function CreateTeamPage() {
         const payload = {
         nazwa_druzyny: nazwa,
         logo: logo,
+        logo_color: logoColor,
+        logo_fill_color: logoFillColor,
         opis: opis,
         wojewodztwo: wojewodztwo,
         dyscyplina: dyscyplina,
@@ -116,15 +126,42 @@ export default function CreateTeamPage() {
 
         <label>
           Logo (wybierz gotowe)
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
             {LOGO_OPTIONS.map((lo) => (
-              <button key={lo.id} type="button" onClick={() => setLogo(lo.id)} style={{ border: lo.id === logo ? '2px solid #007acc' : '1px solid #ddd', padding: 4, background: 'white', borderRadius: 6 }}>
-                <img src={lo.src} alt={lo.label} style={{ width: 80, height: 80, display: 'block' }} />
-                <div style={{ fontSize: 12, textAlign: 'center', marginTop: 4 }}>{lo.label}</div>
+              <button key={lo.id} type="button" onClick={() => setLogo(lo.id)} style={{ border: lo.id === logo ? '2px solid #007acc' : '1px solid #ddd', padding: 4, background: logoColor, borderRadius: 6, transition: 'background 0.2s' }}>
+                <TeamLogo type={lo.id} color={logoFillColor} style={{ width: 80, height: 80 }} />
               </button>
             ))}
           </div>
         </label>
+
+        <div style={{ display: 'flex', gap: 20 }}>
+          <label>
+            Kolor tła logo
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+              <input 
+                type="color" 
+                value={logoColor} 
+                onChange={(e) => setLogoColor(e.target.value)} 
+                style={{ width: 50, height: 40, padding: 0, border: 'none', cursor: 'pointer' }} 
+              />
+              <span style={{ fontSize: 14, color: '#666' }}>{logoColor}</span>
+            </div>
+          </label>
+
+          <label>
+            Kolor ikony
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+              <input 
+                type="color" 
+                value={logoFillColor} 
+                onChange={(e) => setLogoFillColor(e.target.value)} 
+                style={{ width: 50, height: 40, padding: 0, border: 'none', cursor: 'pointer' }} 
+              />
+              <span style={{ fontSize: 14, color: '#666' }}>{logoFillColor}</span>
+            </div>
+          </label>
+        </div>
 
         <label>
           Opis drużyny
@@ -156,11 +193,26 @@ export default function CreateTeamPage() {
 
         <label>
           Dyscyplina
-          <select value={dyscyplina} onChange={(e) => setDyscyplina(e.target.value)} style={{ width: '100%', padding: 8 }}>
-            <option value="Pilka nozna">Piłka nożna</option>
-            <option value="Siatkowka">Siatkówka</option>
-            {/* Szachy nie obsługuje drużyn — nie pokazujemy tej opcji */}
-          </select>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => setDyscyplina('Pilka nozna')}
+              style={{
+                border: dyscyplina === 'Pilka nozna' ? '2px solid #007acc' : '1px solid #ddd',
+                borderRadius: 8,
+                padding: 8,
+                background: dyscyplina === 'Pilka nozna' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                width: 100
+              }}
+            >
+              <img src={soccer} alt="Piłka nożna" style={{ width: 60, height: 60, objectFit: 'contain', marginBottom: 4 }} />
+              <span style={{ fontSize: 14, color: 'white' }}>Piłka nożna</span>
+            </button>
+          </div>
         </label>
 
         <div style={{ textAlign: 'center', marginTop: 12 }}>

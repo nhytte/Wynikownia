@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import supabase from '../lib/supabaseClient'
 import { Link } from 'react-router-dom'
+import { TeamLogo } from '../components/TeamLogos'
 
 type Team = {
   druzyna_id: number
   nazwa_druzyny: string
   logo: string | null
+  logo_color?: string | null
+  logo_fill_color?: string | null
   opis: string | null
   wojewodztwo: string | null
   dyscyplina: string | null
@@ -25,13 +28,20 @@ export default function TeamsPage() {
   const fetchTeams = async () => {
     setLoading(true)
     try {
-      let query = supabase.from('druzyny').select('*')
+      let query = supabase.from('druzyny').select('*, teammembers(status)')
       if (filterName.trim()) query = query.ilike('nazwa_druzyny', `%${filterName}%`)
       if (filterDyscyplina) query = query.eq('dyscyplina', filterDyscyplina)
       if (filterWoj) query = query.eq('wojewodztwo', filterWoj)
       const { data, error } = await query.order('created_at', { ascending: false })
       if (error) throw error
-      const rows = (data as Team[]) || []
+      
+      const rows = (data as any[]).map(t => ({
+        ...t,
+        liczba_czlonkow: t.teammembers 
+          ? t.teammembers.filter((m: any) => m.status === 'accepted').length 
+          : 0
+      })) as Team[]
+      
       setTeams(rows)
     } catch (err) {
       console.error('Fetch teams error', err)
@@ -93,20 +103,13 @@ export default function TeamsPage() {
             <Link to={`/teams/${t.druzyna_id}`} key={t.druzyna_id} className="team-card">
               <div className="team-content">
                 <div className="team-left">
-                  <div className="team-icon">
-                    {(() => {
-                      const src = (function getSrc() {
-                        if (!t.logo) return null
-                        if (t.logo.startsWith('http') || t.logo.startsWith('/')) return t.logo
-                        const map: Record<string, string> = {
-                          logo1: '/src/assets/logos/logo1.svg',
-                          logo2: '/src/assets/logos/logo2.svg',
-                          logo3: '/src/assets/logos/logo3.svg',
-                        }
-                        return map[t.logo] ?? null
-                      })()
-                      return src ? <img src={src} alt="logo" style={{ width: 56, height: 56, objectFit: 'contain' }} /> : <div style={{ width: 56, height: 56 }} />
-                    })()}
+                  <div className="team-icon" style={{ background: t.logo_color || 'transparent', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <TeamLogo 
+                      type={t.logo} 
+                      color={t.logo_fill_color || '#000000'} 
+                      style={{ width: 48, height: 48 }} 
+                      fallbackSrc={t.logo?.startsWith('http') || t.logo?.startsWith('/') ? t.logo : undefined}
+                    />
                   </div>
                   <div className="team-name">{t.nazwa_druzyny}</div>
                 </div>

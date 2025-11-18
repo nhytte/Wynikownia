@@ -2,14 +2,19 @@ import { useEffect, useState } from 'react'
 import supabase from '../lib/supabaseClient'
 import { useAuth0 } from '@auth0/auth0-react'
 import { emailLocal } from '../lib/displayName'
-import { getLogoSrc } from '../lib/logoMap'
+import { TeamLogo } from '../components/TeamLogos'
 
 type Team = {
   druzyna_id: number
   nazwa_druzyny: string
   logo?: string | null
+  logo_color?: string | null
+  logo_fill_color?: string | null
   dyscyplina?: string | null
   owner_id?: string | null
+  created_at?: string | null
+  opis?: string | null
+  wojewodztwo?: string | null
 }
 
 export default function AdminPanel() {
@@ -316,7 +321,14 @@ export default function AdminPanel() {
               {teams.map(t => (
                 <div key={t.druzyna_id} className="tournament-row">
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    {t.logo ? <img src={getLogoSrc(t.logo) ?? undefined} alt="logo" style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8 }} /> : null}
+                    <div style={{ width: 44, height: 44, background: t.logo_color || 'transparent', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <TeamLogo 
+                        type={t.logo || null} 
+                        color={t.logo_fill_color || '#000000'} 
+                        style={{ width: 36, height: 36 }} 
+                        fallbackSrc={t.logo?.startsWith('http') || t.logo?.startsWith('/') ? t.logo : undefined}
+                      />
+                    </div>
                     <div className="tournament-left">{t.nazwa_druzyny}</div>
                   </div>
                   <div className="tournament-mid">{t.dyscyplina}</div>

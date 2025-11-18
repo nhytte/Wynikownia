@@ -5,6 +5,8 @@ import supabase from '../lib/supabaseClient'
 import { deriveProvince } from '../lib/province'
 import { emailLocal } from '../lib/displayName'
 import { getAppBaseUrl } from '../lib/url'
+import { TeamLogo } from '../components/TeamLogos'
+import { getLogoSrc } from '../lib/logoMap'
 
 export default function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuth0()
@@ -28,16 +30,27 @@ export default function ProfilePage() {
         setIsAdmin((u.rola || '') === 'Administrator')
       }
 
-      const { data: owned } = await supabase.from('druzyny').select('*').eq('owner_id', uid)
-      setOwnedTeams((owned as any[]) || [])
+      const { data: owned } = await supabase.from('druzyny').select('*, teammembers(status)').eq('owner_id', uid)
+      const ownedWithCount = (owned as any[] || []).map(t => ({
+        ...t,
+        liczba_czlonkow: t.teammembers 
+          ? t.teammembers.filter((m: any) => m.status === 'accepted').length 
+          : 0
+      }))
+      setOwnedTeams(ownedWithCount)
 
-  // memberships
-  const { data: mems } = await supabase.from('teammembers').select('*').eq('user_id', uid).eq('status', 'accepted')
+      // memberships
+      const { data: mems } = await supabase.from('teammembers').select('*').eq('user_id', uid).eq('status', 'accepted')
       const teamIds = (mems as any[] || []).map((m) => m.druzyna_id)
       let memberTeams: any[] = []
       if (teamIds.length) {
-        const { data: mts } = await supabase.from('druzyny').select('*').in('druzyna_id', teamIds)
-        memberTeams = (mts as any[]) || []
+        const { data: mts } = await supabase.from('druzyny').select('*, teammembers(status)').in('druzyna_id', teamIds)
+        memberTeams = (mts as any[] || []).map(t => ({
+          ...t,
+          liczba_czlonkow: t.teammembers 
+            ? t.teammembers.filter((m: any) => m.status === 'accepted').length 
+            : 0
+        }))
       }
       setMemberOf(memberTeams)
 
@@ -105,14 +118,21 @@ export default function ProfilePage() {
             {combinedTeams.map((t: any) => (
               <Link key={t.druzyna_id} to={`/teams/${t.druzyna_id}`} className="team-row" style={{ textDecoration: 'none' }}>
                 <div className="team-left">
-                  <div className="team-icon">⚔️</div>
+                  <div className="team-icon" style={{ background: t.logo_color || 'transparent', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <TeamLogo 
+                      type={t.logo} 
+                      color={t.logo_fill_color || '#000000'} 
+                      style={{ width: 32, height: 32 }} 
+                      fallbackSrc={getLogoSrc(t.logo || '') || undefined}
+                    />
+                  </div>
                   <div>
                     <div className="team-name">{t.nazwa_druzyny}{t.owner_id === (user as any).sub ? ' — Właściciel' : ''}</div>
                     <div className="team-prov">{t.wojewodztwo || ''}{t.wojewodztwo ? ', ' : ''}{t.dyscyplina || ''}</div>
                   </div>
                 </div>
                 <div className="team-right">
-                  <div className="team-count">{t.liczba_czlonkow ?? '-'}</div>
+                  <div className="team-count">{(t.liczba_czlonkow ?? 0) + (t.dyscyplina === 'Pilka nozna' ? '/16' : '')}</div>
                 </div>
               </Link>
             ))}
