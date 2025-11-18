@@ -119,4 +119,7 @@ ADD COLUMN format_rozgrywek VARCHAR(20) CHECK (format_rozgrywek IN ('Pucharowy',
 ALTER TABLE Zapisy
 ADD COLUMN nazwa_druzyny VARCHAR(100);
 
+For more table changes look into sql/*.sql files. If 
+
 If anything here looks incomplete or you need more repo-specific rules (commit message format, branching, CI), ask for the missing details and I will augment this file.
+

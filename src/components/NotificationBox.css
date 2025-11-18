@@ -1,0 +1,130 @@
+.notification-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-right: 1rem;
+}
+
+.notification-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.notification-trigger:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  border: 2px solid #1a1a1a; /* Match header bg */
+}
+
+.user-trigger.has-unread svg path {
+  animation: pulse-color 2s infinite;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 1000;
+  margin-top: 8px;
+}
+
+.guest-dropdown {
+  width: 250px;
+  padding: 16px;
+}
+
+.notification-content-simple {
+  color: #e5e5e5;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.notification-header {
+  padding: 12px;
+  border-bottom: 1px solid #333;
+  font-weight: bold;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.notification-item {
+  padding: 12px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.unread {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.notification-content p {
+  margin: 0 0 4px 0;
+  font-size: 0.9rem;
+  color: #e5e5e5;
+}
+
+.notification-content small {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.notification-link, .mark-read-btn {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  background: #333;
+  border-radius: 4px;
+  color: white;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.notification-link:hover, .mark-read-btn:hover {
+  background: #444;
+}
+
+.notification-empty {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+}
+
+@keyframes pulse-color {
+  0% { fill: #ef4444; }
+  50% { fill: #f87171; }
+  100% { fill: #ef4444; }
+}

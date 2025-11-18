@@ -11,6 +11,7 @@ import ProfilePage from './pages/Profile'
 import TournamentDetail from './pages/TournamentDetail'
 import AdminPanel from './pages/AdminPanel'
 import CreateTournament from './pages/CreateTournament'
+import NotificationBox from './components/NotificationBox'
 import { useAuth0 } from '@auth0/auth0-react'
 import supabase from './lib/supabaseClient'
 import { emailLocal } from './lib/displayName'
@@ -48,6 +49,7 @@ function App() {
         </div>
 
         <div className="topbar-right">
+          <NotificationBox />
           {isLoading ? (
             <span className="small-muted">Loading...</span>
           ) : isAuthenticated ? (
