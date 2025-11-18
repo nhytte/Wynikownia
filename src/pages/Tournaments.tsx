@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import lawka from '../img/lawka.jpeg'
-import pilka from '../img/pilka.jpg'
-import puchar from '../img/puchar.jpg'
+import { lawka, pilka, puchar, szatnia } from '../lib/remoteImages'
 import supabase from '../lib/supabaseClient'
 
 type Tournament = {
@@ -254,7 +252,7 @@ export default function TournamentsPage(props: Props) {
           <div className="cards-grid" style={{ marginTop: 18 }}>
               <div className="create-block" style={{ gridColumn: '1 / -1' }}>
                 <div className="hero-create">
-                  <img src="/src/img/szatnia.jpg" alt="Create Tournament" />
+                  <img src={szatnia} alt="Create Tournament" />
                   <div className="hero-inner">
                     <p style={{ margin: '20px', color: 'var(--muted)' }}>Masz pomysł na własne rozgrywki? Zorganizuj turniej dla swojej społeczności! Wypełnij krótki formularz, a my pomożemy Ci to zrealizować. Po poprawnym wypełnieniu i akceptacji przez administratora, Twój turniej zostanie opublikowany i wszyscy będą mogli się do niego zapisać.</p>
                     <div style={{ marginTop: 12 }}>
@@ -290,7 +288,7 @@ export default function TournamentsPage(props: Props) {
             <div className="cards-grid" style={{ marginTop: 18 }}>
                 <div className="create-block" style={{ gridColumn: '1 / -1' }}>
                   <div className="hero-create">
-                    <img src="/src/img/szatnia.jpg" alt="Create Tournament" />
+                    <img src={szatnia} alt="Create Tournament" />
                     <div className="hero-inner">
                       <p style={{ margin: '20px', color: 'var(--muted)' }}>Masz pomysł na własne rozgrywki? Zorganizuj turniej dla swojej społeczności! Wypełnij krótki formularz, a my pomożemy Ci to zrealizować. Po poprawnym wypełnieniu i akceptacji przez administratora, Twój turniej zostanie opublikowany i wszyscy będą mogli się do niego zapisać.</p>
                       <div style={{ marginTop: 12 }}>

@@ -20,6 +20,7 @@ export default function TeamDetail() {
   const { id } = useParams<{ id: string }>()
   const [team, setTeam] = useState<Team | null>(null)
   const [members, setMembers] = useState<any[]>([])
+  const [pendingRequests, setPendingRequests] = useState<any[]>([])
   const [currentSignups, setCurrentSignups] = useState<any[]>([])
   const [pastSignups, setPastSignups] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -40,7 +41,9 @@ export default function TeamDetail() {
   const { data: membersData } = await supabase.from('teammembers').select('*, uzytkownicy(nazwa_wyswietlana, imie, nazwisko, email)').eq('druzyna_id', Number(id)).eq('status', 'accepted')
       setMembers((membersData as any[]) || [])
 
-      // pending join requests are not shown in this simplified layout
+      // pending join requests: shown to the team owner so they can approve/reject
+      const { data: pendingData } = await supabase.from('teammembers').select('*, uzytkownicy(nazwa_wyswietlana, imie, nazwisko, email)').eq('druzyna_id', Number(id)).eq('status', 'pending')
+      setPendingRequests((pendingData as any[]) || [])
 
       // signups to tournaments: look into Zapisy table filtering by team? If Zapisy stores team info, adapt. We'll fetch Zapisy where nazwa_druzyny matches as a fallback.
   const { data: current } = await supabase.from('zapisy').select('*, turnieje(*)').eq('status', 'Zaakceptowany').eq('nazwa_druzyny', teamData?.nazwa_druzyny)
@@ -119,6 +122,19 @@ export default function TeamDetail() {
     } catch (e) {
       console.error(e)
       alert('Aktualizacja opisu nie powiodła się')
+    }
+  }
+
+  const decideRequest = async (memberId: number, decision: 'accepted' | 'rejected') => {
+    try {
+      const payload: any = { status: decision, responded_at: new Date().toISOString() }
+      const { error } = await supabase.from('teammembers').update(payload).eq('member_id', memberId)
+      if (error) throw error
+      await fetchDetail()
+      alert(`Wniosek ${decision === 'accepted' ? 'zaakceptowany' : 'odrzucony'}`)
+    } catch (e) {
+      console.error('Could not update request', e)
+      alert('Nie udało się przetworzyć wniosku')
     }
   }
 
@@ -256,6 +272,32 @@ export default function TeamDetail() {
           ))}
         </div>
       </div>
+      {isAuthenticated && (user as any).sub === team?.owner_id && (
+        <div className="panel">
+          <h3 style={{ marginTop: 0 }}>Prośby o dołączenie</h3>
+          {pendingRequests.length === 0 ? (
+            <div style={{ padding: 8, color: 'var(--muted)' }}>Brak oczekujących wniosków</div>
+          ) : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {pendingRequests.map((r) => (
+                <div key={r.member_id} className="team-row">
+                  <div className="team-left">
+                    <div className="team-icon">👤</div>
+                    <div>
+                      <div className="team-name">{r.uzytkownicy?.nazwa_wyswietlana || ((r.uzytkownicy?.imie || r.uzytkownicy?.nazwisko) ? `${r.uzytkownicy?.imie ?? ''} ${r.uzytkownicy?.nazwisko ?? ''}`.trim() : '') || emailLocal(r.uzytkownicy?.email) || r.user_id}</div>
+                      <div className="team-prov">{r.requested_at ? new Date(r.requested_at).toLocaleString('pl-PL') : ''}</div>
+                    </div>
+                  </div>
+                  <div className="team-right" style={{ display: 'flex', gap: 8 }}>
+                    <button className="td-btn td-edit" onClick={() => decideRequest(r.member_id, 'accepted')}>Akceptuj</button>
+                    <button className="td-btn td-danger" onClick={() => decideRequest(r.member_id, 'rejected')}>Odrzuć</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

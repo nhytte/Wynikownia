@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
+import { google, logo } from '../lib/remoteImages'
 
 
 export default function LoginPage() {
   const { loginWithRedirect, logout, isAuthenticated, user, isLoading } = useAuth0()
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
 
   // We still use Auth0 Universal Login for authentication; the password field
@@ -37,13 +37,12 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card" role="main" aria-labelledby="login-title">
-        <div className="brand-icon"><img src="src/img/logo.svg" alt="Wynikownia" style={{ width: 48, height: 48 }} /></div>
+        <div className="brand-icon"><img src={logo} alt="Wynikownia" style={{ width: 48, height: 48 }} /></div>
         <h2 id="login-title">Witaj ponownie</h2>
         <p className="sub">Zaloguj się do swojego konta</p>
 
         <form className="login-form" onSubmit={handleSubmit}>
           <input className="login-input" type="email" placeholder="Adres E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <input className="login-input" type="password" placeholder="Hasło" value={password} onChange={(e) => setPassword(e.target.value)} />
 
           <div className="login-checkbox-row">
             <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -59,6 +58,7 @@ export default function LoginPage() {
         <div style={{ marginTop: 8 }}>
           <div style={{ marginBottom: 8, color: '#6b7280' }}>kontynuuj z</div>
           <button className="login-google" onClick={handleGoogle} aria-label="Zaloguj się z Google">
+            <img src={google} alt="Google" style={{ width: 24, height: 24 }} />
             <span>Zaloguj się z Google</span>
           </button>
         </div>
