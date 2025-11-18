@@ -1,5 +1,5 @@
 import './App.css'
-import logo from './img/logo.svg'
+import { soccer, chess, logo } from './lib/remoteImages'
 import { useEffect, useState } from 'react'
 import { Link, Routes, Route } from 'react-router-dom'
 import LoginPage from './pages/Login'
@@ -68,10 +68,10 @@ function App() {
       <div className="category-bar">
           <div className="category-inner">
             <button className={selectedDiscipline === 'Pilka nozna' ? 'category-btn category-selected' : 'category-btn'} onClick={() => setSelectedDiscipline('Pilka nozna')}>
-              <span style={{ display:'inline-flex', alignItems:'center', gap:8 }}><img src="/src/img/soccer.svg" alt="piłka" style={{ width:18, height:18, borderRadius:4, objectFit:'cover' }} />Piłka nożna</span>
+              <span style={{ display:'inline-flex', alignItems:'center', gap:8 }}><img src={soccer} alt="piłka" style={{ width:18, height:18, borderRadius:4, objectFit:'cover' }} />Piłka nożna</span>
             </button>
             <button className={selectedDiscipline === 'Szachy' ? 'category-btn category-selected' : 'category-btn'} onClick={() => setSelectedDiscipline('Szachy')}>
-              <span style={{ display:'inline-flex', alignItems:'center', gap:8 }}><img src="/src/img/chess.svg" alt="szachy" style={{ width:18, height:18, borderRadius:4, objectFit:'cover' }} />Szachy</span>
+              <span style={{ display:'inline-flex', alignItems:'center', gap:8 }}><img src={chess} alt="szachy" style={{ width:18, height:18, borderRadius:4, objectFit:'cover' }} />Szachy</span>
             </button>
           </div>
         </div>

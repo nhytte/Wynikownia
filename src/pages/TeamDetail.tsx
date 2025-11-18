@@ -331,6 +331,32 @@ export default function TeamDetail() {
           ))}
         </div>
       </div>
+      {isAuthenticated && (user as any).sub === team?.owner_id && (
+        <div className="panel">
+          <h3 style={{ marginTop: 0 }}>Prośby o dołączenie</h3>
+          {pendingRequests.length === 0 ? (
+            <div style={{ padding: 8, color: 'var(--muted)' }}>Brak oczekujących wniosków</div>
+          ) : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {pendingRequests.map((r) => (
+                <div key={r.member_id} className="team-row">
+                  <div className="team-left">
+                    <div className="team-icon">👤</div>
+                    <div>
+                      <div className="team-name">{r.uzytkownicy?.nazwa_wyswietlana || ((r.uzytkownicy?.imie || r.uzytkownicy?.nazwisko) ? `${r.uzytkownicy?.imie ?? ''} ${r.uzytkownicy?.nazwisko ?? ''}`.trim() : '') || emailLocal(r.uzytkownicy?.email) || r.user_id}</div>
+                      <div className="team-prov">{r.requested_at ? new Date(r.requested_at).toLocaleString('pl-PL') : ''}</div>
+                    </div>
+                  </div>
+                  <div className="team-right" style={{ display: 'flex', gap: 8 }}>
+                    <button className="td-btn td-edit" onClick={() => decideRequest(r.member_id, 'accepted')}>Akceptuj</button>
+                    <button className="td-btn td-danger" onClick={() => decideRequest(r.member_id, 'rejected')}>Odrzuć</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
