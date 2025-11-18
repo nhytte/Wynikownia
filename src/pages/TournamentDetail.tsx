@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import supabase from '../lib/supabaseClient'
 import { useAuth0 } from '@auth0/auth0-react'
 import { getLogoSrc } from '../lib/logoMap'
+import { calender, team as teamIcon, locationImg, lawka } from '../lib/remoteImages'
 import { deriveProvince } from '../lib/province'
 import TournamentView from '../components/TournamentView.tsx'
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=location_on" />
@@ -915,23 +916,23 @@ export default function TournamentDetail() {
         <section className="detail-grid">
           <div className="detail-image">
             {/* Tournament image or fallback */}
-            <img src={(tournament.zdjecie && tournament.zdjecie.length) ? tournament.zdjecie : '/src/img/lawka.jpeg'} alt={tournament.nazwa} />
+            <img src={(tournament.zdjecie && tournament.zdjecie.length) ? tournament.zdjecie : lawka} alt={tournament.nazwa} />
           </div>
 
           <div className="detail-right">
             <div className="meta-cards">
               <div className="meta-card">
-                <h4><img src="/src/img/calender.svg" alt="Data"/>Data</h4>
+                <h4><img src={calender} alt="Data"/>Data</h4>
                 <div className="meta-value">{formattedDate}</div>
                 <div className="meta-sub">{timeRange}</div>
               </div>
               <div className="meta-card">
-                <h4><img src="/src/img/team.svg" alt="Drużyny"/>Drużyny</h4>
+                <h4><img src={teamIcon} alt="Drużyny"/>Drużyny</h4>
                 <div className="meta-value">{accepted.length} / {tournament.max_uczestnikow || '—'}</div>
                 <div className="meta-sub">wolnych miejsc: {Math.max(0, (tournament.max_uczestnikow || 0) - accepted.length)}</div>
               </div>
               <div className="meta-card">
-                <h4><img src="/src/img/location.svg" alt="Lokalizacja"/>Lokalizacja</h4>
+                <h4><img src={locationImg} alt="Lokalizacja"/>Lokalizacja</h4>
                 <div className="meta-value">{tournament.lokalizacja || '—'}</div>
                 {tournament.dokladne_miejsce && <div className="meta-sub">{tournament.dokladne_miejsce}</div>}
                 <div className="meta-sub">Województwo: {provinceDisplay || '—'}</div>

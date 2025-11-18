@@ -108,6 +108,17 @@ button.ghost:hover {
   text-align:center; color:var(--muted); margin-bottom: 28px;
 }
 
+/* Heading fonts */
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+}
+
+h3 {
+  font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+}
+
 .cards-grid {
   display: grid;
   /* maximum three cards per row for more spacing */
