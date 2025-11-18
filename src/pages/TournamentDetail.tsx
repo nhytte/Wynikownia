@@ -5,7 +5,8 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { getLogoSrc } from '../lib/logoMap'
 import { deriveProvince } from '../lib/province'
 import TournamentView from '../components/TournamentView.tsx'
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=location_on" />
+import ChatBox from '../components/ChatBox'
+import UrgentAnnouncements from '../components/UrgentAnnouncements'
 
 export default function TournamentDetail() {
   const { id } = useParams<{ id: string }>()
@@ -14,6 +15,7 @@ export default function TournamentDetail() {
   const [accepted, setAccepted] = useState<any[]>([])
   const [matches, setMatches] = useState<any[]>([])
   const [userTeams, setUserTeams] = useState<any[]>([])
+  const [myTeamIds, setMyTeamIds] = useState<number[]>([])
   const [selectedTeam, setSelectedTeam] = useState('')
   const [loading, setLoading] = useState(false)
   const [registering, setRegistering] = useState(false)
@@ -95,6 +97,9 @@ export default function TournamentDetail() {
         const { data: myTeams } = await supabase.from('druzyny').select('druzyna_id, nazwa_druzyny, logo, dyscyplina').eq('owner_id', (user as any).sub).eq('dyscyplina', t.dyscyplina)
         setUserTeams(myTeams || [])
 
+        const { data: mems } = await supabase.from('teammembers').select('druzyna_id').eq('user_id', (user as any).sub).eq('status', 'accepted')
+        setMyTeamIds(mems ? mems.map((m: any) => m.druzyna_id) : [])
+
         // role check for admin
         try {
           const { data: roleRow } = await supabase.from('uzytkownicy').select('rola').eq('user_id', (user as any).sub).maybeSingle()
@@ -120,6 +125,7 @@ export default function TournamentDetail() {
   }
 
   const isOrganizer = Boolean(isAuthenticated && user && tournament && (user as any).sub === tournament.organizator_id)
+  const isParticipant = Boolean(accepted.find(a => a.user_id === (user as any)?.sub)) || accepted.some(a => a.team && myTeamIds.includes(a.team.druzyna_id)) || isOrganizer
 
   // participants map kept for other sections; bracket edit now uses TournamentView's participants
 
@@ -911,6 +917,8 @@ export default function TournamentDetail() {
           <div style={{ color: '#9fb3c8', marginTop: 6 }}>{tournament.dyscyplina}</div>
         </header>
 
+        <UrgentAnnouncements contextId={Number(id)} contextType="turniej" canPost={isOrganizer} />
+
         {/* Detail grid: left image, right meta + register */}
         <section className="detail-grid">
           <div className="detail-image">
@@ -1155,6 +1163,11 @@ export default function TournamentDetail() {
               />
             )
           })()}
+        </section>
+
+        {/* Chat Section */}
+        <section style={{ marginTop: 16 }}>
+          <ChatBox contextType="turniej" contextId={Number(id)} canWrite={isParticipant} title="Czat turniejowy" />
         </section>
       </div>
     </div>

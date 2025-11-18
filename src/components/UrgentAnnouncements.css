@@ -1,0 +1,138 @@
+.urgent-wrapper {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.urgent-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #2d1a1a; /* Dark red tint */
+  border: 1px solid #5c2b2b;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.urgent-trigger:hover {
+  background: #3d2222;
+}
+
+.urgent-icon-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  color: #ef4444;
+}
+
+.urgent-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.urgent-label {
+  font-weight: bold;
+  color: #ffcece;
+}
+
+.urgent-dropdown {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  width: 100%;
+  max-width: 500px;
+  z-index: 100;
+  padding: 0 !important; /* Override panel padding */
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  border: 1px solid #444;
+}
+
+.urgent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #2d2d2d;
+  border-bottom: 1px solid #333;
+}
+
+.urgent-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.urgent-list {
+  max-height: 300px;
+  overflow-y: auto;
+  background: #1e1e1e;
+}
+
+.urgent-item {
+  padding: 16px;
+  border-bottom: 1px solid #333;
+}
+
+.urgent-date {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.urgent-text {
+  color: #e5e5e5;
+  line-height: 1.4;
+}
+
+.urgent-empty {
+  padding: 24px;
+  text-align: center;
+  color: #888;
+}
+
+.urgent-admin-area {
+  padding: 16px;
+  background: #251515;
+  border-top: 1px solid #5c2b2b;
+}
+
+.urgent-admin-area h4 {
+  margin: 0 0 12px 0;
+  color: #ef4444;
+}
+
+.urgent-admin-area textarea {
+  width: 100%;
+  padding: 8px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  resize: vertical;
+}
+
+.urgent-admin-area small {
+  display: block;
+  margin-top: 8px;
+  color: #888;
+  font-size: 0.8rem;
+}

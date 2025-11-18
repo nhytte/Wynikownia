@@ -142,3 +142,7 @@ SELECT cron.schedule(
     AND z.status = 'Zaakceptowany';
     $$
 );
+
+-- Włącz nasłuchiwanie zmian (Realtime) dla tabeli Powiadomienia
+-- Jest to wymagane, aby klienci otrzymywali zdarzenia 'INSERT' przez WebSocket.
+ALTER PUBLICATION supabase_realtime ADD TABLE powiadomienia;
