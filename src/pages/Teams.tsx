@@ -103,11 +103,11 @@ export default function TeamsPage() {
             <Link to={`/teams/${t.druzyna_id}`} key={t.druzyna_id} className="team-card">
               <div className="team-content">
                 <div className="team-left">
-                  <div className="team-icon" style={{ background: t.logo_color || 'transparent', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <div className="team-icon" style={{ width: 48, height: 48, background: t.logo_color || 'transparent', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                     <TeamLogo 
                       type={t.logo} 
                       color={t.logo_fill_color || '#000000'} 
-                      style={{ width: 48, height: 48 }} 
+                      style={{ width: 36, height: 36 }} 
                       fallbackSrc={t.logo?.startsWith('http') || t.logo?.startsWith('/') ? t.logo : undefined}
                     />
                   </div>

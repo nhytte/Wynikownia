@@ -20,9 +20,11 @@ interface ChatBoxProps {
   contextId: number
   canWrite: boolean
   title?: string
+  onMessageReceived?: () => void
+  isActive?: boolean
 }
 
-export default function ChatBox({ contextType, contextId, canWrite, title = 'Czat' }: ChatBoxProps) {
+export default function ChatBox({ contextType, contextId, canWrite, title = 'Czat', onMessageReceived, isActive = false }: ChatBoxProps) {
   const { user } = useAuth0()
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
@@ -30,12 +32,18 @@ export default function ChatBox({ contextType, contextId, canWrite, title = 'Cza
   const lastMessageDateRef = useRef<string>(new Date(0).toISOString())
   const currentUserId = (user as any)?.sub
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null)
+  const lastReadStorageKey = `chat_last_read_${contextType}_${contextId}`
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' })
     }
   }
+
+  // Auto-scroll on new messages
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
 
   // Fetch current user profile for optimistic updates
   useEffect(() => {
@@ -59,6 +67,28 @@ export default function ChatBox({ contextType, contextId, canWrite, title = 'Cza
     }
   }, [messages])
 
+  // Handle read status
+  useEffect(() => {
+    if (messages.length === 0) return
+
+    const lastMsg = messages[messages.length - 1]
+    const lastMsgTime = new Date(lastMsg.created_at).getTime()
+    const storedLastRead = localStorage.getItem(lastReadStorageKey)
+    const lastReadTime = storedLastRead ? parseInt(storedLastRead, 10) : 0
+
+    if (isActive) {
+      // If active, mark as read immediately
+      if (lastMsgTime > lastReadTime) {
+        localStorage.setItem(lastReadStorageKey, lastMsgTime.toString())
+      }
+    } else {
+      // If not active, check if unread
+      if (lastMsgTime > lastReadTime) {
+        if (onMessageReceived) onMessageReceived()
+      }
+    }
+  }, [messages, isActive, lastReadStorageKey, onMessageReceived])
+
   useEffect(() => {
     const fetchMessages = async () => {
       const { data, error } = await supabase
@@ -70,7 +100,6 @@ export default function ChatBox({ contextType, contextId, canWrite, title = 'Cza
 
       if (!error && data) {
         setMessages(data as any[])
-        setTimeout(scrollToBottom, 100)
       }
     }
 
@@ -95,6 +124,7 @@ export default function ChatBox({ contextType, contextId, canWrite, title = 'Cza
         const newMsg = { ...payload.new, uzytkownicy: userData } as Message
         setMessages(prev => {
           if (prev.some(m => m.wiadomosc_id === newMsg.wiadomosc_id)) return prev
+          if (onMessageReceived) onMessageReceived()
           return [...prev, newMsg]
         })
         setTimeout(scrollToBottom, 100)
@@ -117,6 +147,7 @@ export default function ChatBox({ contextType, contextId, canWrite, title = 'Cza
           const existingIds = new Set(prev.map(m => m.wiadomosc_id))
           const uniqueNew = (data as Message[]).filter(m => !existingIds.has(m.wiadomosc_id))
           if (uniqueNew.length === 0) return prev
+          if (onMessageReceived) onMessageReceived()
           return [...prev, ...uniqueNew]
         })
         setTimeout(scrollToBottom, 100)
@@ -149,7 +180,6 @@ export default function ChatBox({ contextType, contextId, canWrite, title = 'Cza
     // Optimistic update
     setMessages(prev => [...prev, tempMsg])
     setNewMessage('')
-    setTimeout(scrollToBottom, 10)
 
     const { data, error } = await supabase.from('wiadomosci').insert({
       user_id: currentUserId,

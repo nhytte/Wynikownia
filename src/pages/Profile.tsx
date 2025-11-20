@@ -122,7 +122,7 @@ export default function ProfilePage() {
                     <TeamLogo 
                       type={t.logo} 
                       color={t.logo_fill_color || '#000000'} 
-                      style={{ width: 32, height: 32 }} 
+                      style={{ width: 36, height: 36 }} 
                       fallbackSrc={getLogoSrc(t.logo || '') || undefined}
                     />
                   </div>

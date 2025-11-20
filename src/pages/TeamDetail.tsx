@@ -9,6 +9,7 @@ import { TeamLogo } from '../components/TeamLogos'
 import ChatBox from '../components/ChatBox'
 
 import { getLogoSrc } from '../lib/logoMap'
+import { ensureUserExists } from '../lib/ensureUser'
 
 type Team = {
   druzyna_id: number
@@ -61,6 +62,11 @@ export default function TeamDetail() {
   const [tempLogo, setTempLogo] = useState<string | null>(null)
   const [tempLogoColor, setTempLogoColor] = useState('#ffffff')
   const [tempLogoFillColor, setTempLogoFillColor] = useState('#000000')
+  const [viewMode, setViewMode] = useState<'home' | 'chat' | 'results'>('home')
+  const [hasUnread, setHasUnread] = useState(false)
+  const [myPendingRequest, setMyPendingRequest] = useState<any | null>(null)
+  const [teamMatches, setTeamMatches] = useState<any[]>([])
+  const [matchesLoading, setMatchesLoading] = useState(false)
 
   const fetchDetail = async () => {
     if (!id) return
@@ -82,6 +88,19 @@ export default function TeamDetail() {
         setPendingMembers((pendingData as any[]) || [])
       } else {
         setPendingMembers([])
+      }
+
+      // Check if current user has a pending request (regardless of being owner)
+      if (user) {
+        const { data: myReq } = await supabase.from('teammembers')
+          .select('*')
+          .eq('druzyna_id', Number(id))
+          .eq('user_id', (user as any).sub)
+          .eq('status', 'pending')
+          .maybeSingle()
+        setMyPendingRequest(myReq)
+      } else {
+        setMyPendingRequest(null)
       }
 
       // signups to tournaments: look into Zapisy table filtering by team? If Zapisy stores team info, adapt. We'll fetch Zapisy where nazwa_druzyny matches as a fallback.
@@ -107,6 +126,14 @@ export default function TeamDetail() {
 
   const handleJoin = async () => {
     if (!isAuthenticated || !user) return navigate('/login')
+    
+    // Ensure user exists in DB before joining
+    const userOk = await ensureUserExists(user)
+    if (!userOk) {
+      alert('Błąd synchronizacji użytkownika. Spróbuj ponownie.')
+      return
+    }
+
     try {
       const uid = (user as any).sub
       // fetch team discipline
@@ -141,11 +168,32 @@ export default function TeamDetail() {
         status: 'pending'
       }
       const { error } = await supabase.from('teammembers').insert(payload)
-      if (error) throw error
+      if (error) {
+        if (error.code === '23505' || error.message?.includes('duplicate key')) {
+          alert('Już wysłałeś prośbę lub jesteś w tej drużynie.')
+          return
+        }
+        throw error
+      }
       alert('Wysłano prośbę do właściciela drużyny')
+      await fetchDetail()
     } catch (err) {
       console.error(err)
       alert('Nie udało się wysłać prośby')
+    }
+  }
+
+  const handleCancelRequest = async () => {
+    if (!myPendingRequest) return
+    if (!confirm('Anulować prośbę o dołączenie?')) return
+    try {
+      const { error } = await supabase.from('teammembers').delete().eq('member_id', myPendingRequest.member_id)
+      if (error) throw error
+      alert('Prośba została anulowana')
+      await fetchDetail()
+    } catch (e) {
+      console.error(e)
+      alert('Nie udało się anulować prośby')
     }
   }
 
@@ -238,22 +286,224 @@ export default function TeamDetail() {
     </button>
   )
 
+  const fetchTeamMatches = async () => {
+    if (!team) return
+    setMatchesLoading(true)
+    try {
+      const { data: zaps } = await supabase.from('zapisy').select('zapis_id, turniej_id, turnieje(nazwa)').eq('nazwa_druzyny', team.nazwa_druzyny)
+      if (!zaps || zaps.length === 0) {
+        setTeamMatches([])
+        return
+      }
+      const zids = zaps.map(z => z.zapis_id)
+      
+      const { data: ms } = await supabase.from('mecze')
+        .select('*')
+        .or(`uczestnik_1_zapis_id.in.(${zids.join(',')}),uczestnik_2_zapis_id.in.(${zids.join(',')})`)
+        .order('mecz_id', { ascending: false }) // fallback sort, we'll sort by date in JS if needed
+      
+      // Enrich matches with tournament name and opponent name
+      // We need to fetch opponent names. This is tricky because we only have zapis_id.
+      // We can fetch all involved zapisy.
+      const allZapisIds = new Set<number>()
+      ms?.forEach(m => {
+        if (m.uczestnik_1_zapis_id) allZapisIds.add(m.uczestnik_1_zapis_id)
+        if (m.uczestnik_2_zapis_id) allZapisIds.add(m.uczestnik_2_zapis_id)
+      })
+      
+      const { data: oppZaps } = await supabase.from('zapisy').select('zapis_id, nazwa_druzyny, user_id, uzytkownicy(nazwa_wyswietlana)').in('zapis_id', Array.from(allZapisIds))
+      const oppMap = new Map<number, string>()
+      oppZaps?.forEach((z: any) => {
+        const name = z.nazwa_druzyny || z.uzytkownicy?.nazwa_wyswietlana || 'Uczestnik'
+        oppMap.set(z.zapis_id, name)
+      })
+
+      const enriched = (ms || []).map(m => {
+        const z = zaps.find(x => x.turniej_id === m.turniej_id)
+        const myZapisId = zids.includes(m.uczestnik_1_zapis_id) ? m.uczestnik_1_zapis_id : m.uczestnik_2_zapis_id
+        const oppZapisId = m.uczestnik_1_zapis_id === myZapisId ? m.uczestnik_2_zapis_id : m.uczestnik_1_zapis_id
+        const oppName = oppZapisId ? (oppMap.get(oppZapisId) || 'Nieznany') : 'BYE'
+        
+        return { 
+          ...m, 
+          tournament_name: (z?.turnieje as any)?.nazwa || 'Turniej',
+          opponent_name: oppName,
+          is_home: m.uczestnik_1_zapis_id === myZapisId
+        }
+      })
+      
+      setTeamMatches(enriched)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setMatchesLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (viewMode === 'results') {
+      fetchTeamMatches()
+    }
+  }, [viewMode, team])
+
+  useEffect(() => {
+    if (viewMode === 'chat' && !isMember) {
+      setViewMode('home')
+    }
+  }, [viewMode, isMember])
+
   if (loading) return <div style={{ padding: 20 }}>Ładowanie…</div>
   if (!team) return <div style={{ padding: 20 }}>Drużyna nie znaleziona</div>
 
   return (
     <div className="page-content">
-      <h1 style={{ textAlign: 'center', fontFamily: 'Lora, serif' }}>{team.nazwa_druzyny}</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h1 style={{ margin: 0, fontFamily: 'Lora, serif' }}>{team.nazwa_druzyny}</h1>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button 
+            onClick={() => setViewMode('home')}
+            style={{
+              padding: '8px 16px',
+              background: viewMode === 'home' ? '#0ea5e9' : '#1e293b',
+              color: viewMode === 'home' ? '#001024' : '#94a3b8',
+              border: 'none',
+              borderRadius: 6,
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Home
+          </button>
+          {isMember && (
+            <button 
+              onClick={() => {
+                setViewMode('chat')
+                setHasUnread(false)
+              }}
+              style={{
+                padding: '8px 16px',
+                background: viewMode === 'chat' ? '#0ea5e9' : '#1e293b',
+                color: viewMode === 'chat' ? '#001024' : '#94a3b8',
+                border: 'none',
+                borderRadius: 6,
+                fontWeight: 600,
+                cursor: 'pointer',
+                position: 'relative'
+              }}
+            >
+              Chat
+              {hasUnread && viewMode !== 'chat' && (
+                <span style={{
+                  position: 'absolute',
+                  top: -5,
+                  right: -5,
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontSize: 10,
+                  padding: '2px 6px',
+                  borderRadius: 10,
+                  fontWeight: 'bold'
+                }}>New</span>
+              )}
+            </button>
+          )}
+          <button 
+            onClick={() => setViewMode('results')}
+            style={{
+              padding: '8px 16px',
+              background: viewMode === 'results' ? '#0ea5e9' : '#1e293b',
+              color: viewMode === 'results' ? '#001024' : '#94a3b8',
+              border: 'none',
+              borderRadius: 6,
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Wyniki
+          </button>
+        </div>
+      </div>
 
-      {(isMember || (isAuthenticated && (user as any).sub === team?.owner_id)) && (
-        <UrgentAnnouncements 
-          contextId={Number(id)} 
-          contextType="druzyna" 
-          canPost={isAuthenticated && (user as any).sub === team?.owner_id} 
-        />
+      {viewMode === 'results' && (
+        <div className="panel">
+          <h2 style={{ marginTop: 0 }}>Wyniki i mecze</h2>
+          {matchesLoading ? (
+            <div>Ładowanie meczów...</div>
+          ) : teamMatches.length === 0 ? (
+            <div>Brak rozegranych lub zaplanowanych meczów.</div>
+          ) : (
+            <div>
+              {(Object.entries(teamMatches.reduce((acc, m) => {
+                const tName = m.tournament_name
+                if (!acc[tName]) acc[tName] = []
+                acc[tName].push(m)
+                return acc
+              }, {} as Record<string, any[]>)) as [string, any[]][]).map(([tName, ms]) => {
+                const upcoming = ms.filter((m: any) => m.status === 'Zaplanowany')
+                const finished = ms.filter((m: any) => m.status === 'Zakonczony')
+                
+                return (
+                  <div key={tName} style={{ marginBottom: 24, background: '#0f172a', padding: 16, borderRadius: 8 }}>
+                    <h3 style={{ marginTop: 0, borderBottom: '1px solid #334155', paddingBottom: 8 }}>{tName}</h3>
+                    
+                    {upcoming.length > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <h4 style={{ color: '#94a3b8', marginBottom: 8 }}>Nadchodzące</h4>
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          {upcoming.map((m: any) => (
+                            <div key={m.mecz_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1e293b', padding: 10, borderRadius: 6 }}>
+                              <div style={{ fontWeight: 600 }}>vs {m.opponent_name}</div>
+                              <div style={{ fontSize: 13, color: '#94a3b8' }}>
+                                {m.data_meczu ? new Date(m.data_meczu).toLocaleString() : 'Data nieustalona'}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {finished.length > 0 && (
+                      <div>
+                        <h4 style={{ color: '#94a3b8', marginBottom: 8 }}>Ostatnie wyniki</h4>
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          {finished.map((m: any) => {
+                            const myScore = m.is_home ? m.wynik_1_int ?? m.wynik_1_decimal : m.wynik_2_int ?? m.wynik_2_decimal
+                            const oppScore = m.is_home ? m.wynik_2_int ?? m.wynik_2_decimal : m.wynik_1_int ?? m.wynik_1_decimal
+                            const win = myScore > oppScore
+                            const draw = myScore == oppScore
+                            const color = win ? '#22c55e' : (draw ? '#94a3b8' : '#ef4444')
+                            
+                            return (
+                              <div key={m.mecz_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1e293b', padding: 10, borderRadius: 6, borderLeft: `4px solid ${color}` }}>
+                                <div style={{ fontWeight: 600 }}>vs {m.opponent_name}</div>
+                                <div style={{ fontWeight: 700, fontSize: 16 }}>
+                                  {myScore} : {oppScore}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       )}
 
-      <div className="panel" style={{ padding: 18 }}>
+      {viewMode === 'home' && (
+        <>
+          {(isMember || (isAuthenticated && (user as any).sub === team?.owner_id)) && (
+            <UrgentAnnouncements 
+              contextId={Number(id)} 
+              contextType="druzyna" 
+              canPost={isAuthenticated && (user as any).sub === team?.owner_id} 
+            />
+          )}
+
+          <div className="panel" style={{ padding: 18 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <div style={{ width: 220, height: 220, background: team.logo_color || '#0b1116', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
@@ -374,7 +624,7 @@ export default function TeamDetail() {
                     if (error) throw error
                     alert('Drużyna została usunięta')
                     navigate('/teams')
-                  } catch (e) { console.error(e); alert('Usuwanie drużyny nie powiodło się') }
+                  } catch (e) { console.error(e); alert('Usuwanie drużyny nie powiodła się') }
                 }}>Usuń drużynę</button>
 
                 <button className={`td-btn ${isEditing ? 'td-ghost' : 'td-edit'}`} onClick={() => {
@@ -400,6 +650,8 @@ export default function TeamDetail() {
                   await fetchDetail()
                 } catch (e) { console.error(e); alert('Nie udało się opuścić drużyny') }
               }}>Opuść drużynę</button>
+            ) : myPendingRequest ? (
+              <button className="td-btn td-danger" onClick={handleCancelRequest}>Anuluj prośbę</button>
             ) : (
               <button className="td-btn td-blue" onClick={handleJoin}>Dołącz do drużyny</button>
             )}
@@ -455,17 +707,7 @@ export default function TeamDetail() {
         </div>
       )}
 
-      {/* Sekcja Czat Drużynowy */}
-      {isMember && (
-        <div style={{ marginTop: 20 }}>
-          <ChatBox 
-            contextType="druzyna" 
-            contextId={Number(id)} 
-            canWrite={true} 
-            title="Czat drużynowy"
-          />
-        </div>
-      )}
+
 
       {/* Pending Requests Section (Owner Only) */}
       {isAuthenticated && (user as any).sub === team?.owner_id && pendingMembers.length > 0 && (
@@ -546,6 +788,23 @@ export default function TeamDetail() {
           ))}
         </div>
       </div>
+      </>
+      )}
+
+      {isMember && (
+        <div style={{ marginTop: 20, display: viewMode === 'chat' ? 'block' : 'none' }}>
+          <ChatBox 
+            contextType="druzyna" 
+            contextId={Number(id)} 
+            canWrite={true} 
+            title="Czat drużynowy"
+            isActive={viewMode === 'chat'}
+            onMessageReceived={() => {
+              if (viewMode !== 'chat') setHasUnread(true)
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }

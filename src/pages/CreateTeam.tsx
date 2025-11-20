@@ -4,6 +4,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { useNavigate } from 'react-router-dom'
 import { TeamLogo } from '../components/TeamLogos.tsx'
 import { soccer } from '../lib/remoteImages'
+import { ensureUserExists } from '../lib/ensureUser'
 
 const LOGO_OPTIONS = [
   { id: 'cat1', label: 'Kot 1' },
@@ -34,11 +35,19 @@ export default function CreateTeamPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       // guard: require login before creating a team
       navigate('/login')
       return
     }
+
+    // Ensure user exists in DB
+    const userOk = await ensureUserExists(user)
+    if (!userOk) {
+      setMessage('Błąd synchronizacji użytkownika. Spróbuj ponownie.')
+      return
+    }
+
     if (!nazwa.trim()) {
       setMessage('Podaj nazwę drużyny')
       return

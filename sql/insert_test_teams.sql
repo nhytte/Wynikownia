@@ -1,0 +1,16 @@
+INSERT INTO Druzyny (nazwa_druzyny, logo, opis, wojewodztwo, dyscyplina, owner_id, logo_color, logo_fill_color) VALUES
+('druzyna_test1', 'donkey', 'Test team 1', 'Podlaskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#5b4d4d', '#934848'),
+('druzyna_test2', 'cat1', 'Test team 2', 'Mazowieckie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#ffffff', '#000000'),
+('druzyna_test3', 'cat2', 'Test team 3', 'Wielkopolskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#ff0000', '#00ff00'),
+('druzyna_test4', 'duck', 'Test team 4', 'Małopolskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#0000ff', '#ffff00'),
+('druzyna_test5', 'octopus', 'Test team 5', 'Pomorskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#00ffff', '#ff00ff'),
+('druzyna_test6', 'tree', 'Test team 6', 'Lubelskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#008000', '#ffffff'),
+('druzyna_test7', 'turtle', 'Test team 7', 'Śląskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#808080', '#000000'),
+('druzyna_test8', 'unicorn', 'Test team 8', 'Dolnośląskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#ffc0cb', '#ffffff'),
+('druzyna_test9', 'bear', 'Test team 9', 'Zachodniopomorskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#8b4513', '#ffffff'),
+('druzyna_test10', 'dragon', 'Test team 10', 'Łódzkie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#ff4500', '#000000'),
+('druzyna_test11', 'donkey', 'Test team 11', 'Podlaskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#5b4d4d', '#934848'),
+('druzyna_test12', 'cat1', 'Test team 12', 'Mazowieckie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#ffffff', '#000000'),
+('druzyna_test13', 'cat2', 'Test team 13', 'Wielkopolskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#ff0000', '#00ff00'),
+('druzyna_test14', 'duck', 'Test team 14', 'Małopolskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#0000ff', '#ffff00'),
+('druzyna_test15', 'octopus', 'Test team 15', 'Pomorskie', 'Pilka nozna', 'google-oauth2|116781995169868144494', '#00ffff', '#ff00ff');

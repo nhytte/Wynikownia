@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import supabase from '../lib/supabaseClient'
 import { useAuth0 } from '@auth0/auth0-react'
 import { getLogoSrc } from '../lib/logoMap'
@@ -8,6 +8,8 @@ import { deriveProvince } from '../lib/province'
 import TournamentView from '../components/TournamentView.tsx'
 import ChatBox from '../components/ChatBox'
 import UrgentAnnouncements from '../components/UrgentAnnouncements'
+import { TeamLogo } from '../components/TeamLogos'
+import { ensureUserExists } from '../lib/ensureUser'
 
 export default function TournamentDetail() {
   const { id } = useParams<{ id: string }>()
@@ -39,6 +41,8 @@ export default function TournamentDetail() {
   const [userSearch, setUserSearch] = useState('')
   const [userResults, setUserResults] = useState<any[]>([])
   const [searchingUsers, setSearchingUsers] = useState(false)
+  const [viewMode, setViewMode] = useState<'home' | 'chat'>('home')
+  const [hasUnread, setHasUnread] = useState(false)
 
   const emailLocal = (e?: string | null) => (e && e.includes('@')) ? e.split('@')[0] : (e || '')
 
@@ -61,7 +65,7 @@ export default function TournamentDetail() {
         const names = Array.from(new Set(zaps.filter((z: any) => z.nazwa_druzyny).map((z: any) => z.nazwa_druzyny)))
         const logosMap: Record<string, any> = {}
         if (names.length) {
-          const res = await supabase.from('druzyny').select('druzyna_id, nazwa_druzyny, logo, dyscyplina').in('nazwa_druzyny', names)
+          const res = await supabase.from('druzyny').select('druzyna_id, nazwa_druzyny, logo, logo_color, logo_fill_color, dyscyplina').in('nazwa_druzyny', names)
           const teams = (res as any).data || []
           teams.forEach((tt: any) => { logosMap[tt.nazwa_druzyny] = tt })
         }
@@ -495,15 +499,36 @@ export default function TournamentDetail() {
     if (!tournament || !isAuthenticated || !user) return
     if (!(isOrganizer || isAdmin)) { alert('Brak uprawnień'); return }
     if (tournament.dyscyplina !== 'Pilka nozna' || tournament.typ_zapisu !== 'Drużynowy') { alert('Drabinka dotyczy turniejów drużynowych w piłce nożnej'); return }
-    const cap = Math.max(2, Number(tournament.max_uczestnikow || 2))
+    
     const teamIds: number[] = accepted.map((a) => a.zapis_id)
     if (teamIds.length < 2) { alert('Potrzeba co najmniej 2 zaakceptowanych drużyn'); return }
-    const size = Math.min(nextPowerOfTwo(teamIds.length), cap)
-    const slots: Array<number | null> = [...teamIds.slice(0, size)]
-    while (slots.length < size) slots.push(null)
+    
+    // Calculate bracket size (next power of 2)
+    const size = nextPowerOfTwo(teamIds.length)
+    const byes = size - teamIds.length
+    const fullMatches = (teamIds.length - byes) / 2
+    
+    // Construct slots with proper distribution:
+    // First 'fullMatches' pairs are (Team, Team)
+    // Next 'byes' pairs are (Team, null)
+    const slots: Array<number | null> = []
+    let tIdx = 0
+    
+    // 1. Full matches
+    for (let i = 0; i < fullMatches; i++) {
+      slots.push(teamIds[tIdx++])
+      slots.push(teamIds[tIdx++])
+    }
+    // 2. Bye matches
+    for (let i = 0; i < byes; i++) {
+      slots.push(teamIds[tIdx++])
+      slots.push(null)
+    }
+
     const rounds = Math.log2(size)
     const rows: any[] = []
     const propagateAfter: Array<{ runda: number; blok: number; winnerId: number }> = []
+    
     // Round 1
     for (let i = 0; i < size / 2; i++) {
       const a = slots[i * 2] ?? null
@@ -599,13 +624,32 @@ export default function TournamentDetail() {
     if (tournament.dyscyplina !== 'Pilka nozna' || tournament.typ_zapisu !== 'Drużynowy') { alert('Losowanie dotyczy turniejów drużynowych w piłce nożnej'); return }
     const round1 = matches.filter((m) => (m.runda || 1) === 1).sort((a, b) => (a.blok || 0) - (b.blok || 0))
     if (round1.length === 0) { alert('Najpierw wygeneruj drabinkę'); return }
+    
     const ids = shuffle(accepted.map((a) => a.zapis_id))
+    
+    // Re-calculate distribution logic to match generateBracket
+    const size = round1.length * 2
+    const byes = size - ids.length
+    const fullMatches = (ids.length - byes) / 2
+    
     const updates: any[] = []
     const propagateAfter: Array<{ runda: number; blok: number; winnerId: number }> = []
+    
+    let tIdx = 0
     for (let i = 0; i < round1.length; i++) {
       const m = round1[i]
-      const homeId = ids[i * 2] ?? null
-      const awayId = ids[i * 2 + 1] ?? null
+      let homeId: number | null = null
+      let awayId: number | null = null
+      
+      if (i < fullMatches) {
+        homeId = ids[tIdx++]
+        awayId = ids[tIdx++]
+      } else {
+        // Bye match
+        homeId = ids[tIdx++] ?? null
+        awayId = null
+      }
+
       const patch: any = {
         uczestnik_1_zapis_id: homeId,
         uczestnik_2_zapis_id: awayId,
@@ -817,6 +861,13 @@ export default function TournamentDetail() {
     if (!tournament) return
     if (!isAuthenticated || !user) { alert('Zaloguj się aby zarejestrować'); return }
 
+    // Ensure user exists in DB
+    const userOk = await ensureUserExists(user)
+    if (!userOk) {
+      alert('Błąd synchronizacji użytkownika. Spróbuj ponownie.')
+      return
+    }
+
     const isIndividual = tournament.typ_zapisu === 'Indywidualny' || tournament.dyscyplina === 'Szachy'
 
     // Common checks
@@ -894,7 +945,16 @@ export default function TournamentDetail() {
   // build props for TournamentView (football paths). For swiss we need server-provided data.
   const tvParticipants = accepted.map((a) => {
     const full = (a.user_info?.imie || a.user_info?.nazwisko) ? `${a.user_info?.imie ?? ''} ${a.user_info?.nazwisko ?? ''}`.trim() : ''
-    return { id: a.zapis_id, name: a.nazwa_druzyny || (full || undefined) || a.user_info?.nazwa_wyswietlana || emailLocal(a.user_info?.email) || a.user_id }
+    const rawLogo = a.team?.logo
+    const logo = getLogoSrc(rawLogo) || rawLogo
+    return { 
+      id: a.zapis_id, 
+      name: a.nazwa_druzyny || (full || undefined) || a.user_info?.nazwa_wyswietlana || emailLocal(a.user_info?.email) || a.user_id,
+      logo: logo,
+      logoColor: a.team?.logo_color,
+      logoFillColor: a.team?.logo_fill_color,
+      teamId: a.team?.druzyna_id
+    }
   })
   const tvMatches = matches.map((m) => ({
     id: m.mecz_id,
@@ -913,12 +973,63 @@ export default function TournamentDetail() {
   return (
     <div style={{ minHeight: '100vh', background: '#081018', color: '#e6edf3', padding: 24, boxSizing: 'border-box' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <header style={{ marginBottom: 18 }}>
-          <h1 style={{ margin: 0 }}>{tournament.nazwa}</h1>
-          <div style={{ color: '#9fb3c8', marginTop: 6 }}>{tournament.dyscyplina}</div>
+        <header style={{ marginBottom: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ margin: 0 }}>{tournament.nazwa}</h1>
+            <div style={{ color: '#9fb3c8', marginTop: 6 }}>{tournament.dyscyplina}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button 
+              onClick={() => setViewMode('home')}
+              style={{
+                padding: '8px 16px',
+                background: viewMode === 'home' ? '#0ea5e9' : '#1e293b',
+                color: viewMode === 'home' ? '#001024' : '#94a3b8',
+                border: 'none',
+                borderRadius: 6,
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Home
+            </button>
+            <button 
+              onClick={() => {
+                setViewMode('chat')
+                setHasUnread(false)
+              }}
+              style={{
+                padding: '8px 16px',
+                background: viewMode === 'chat' ? '#0ea5e9' : '#1e293b',
+                color: viewMode === 'chat' ? '#001024' : '#94a3b8',
+                border: 'none',
+                borderRadius: 6,
+                fontWeight: 600,
+                cursor: 'pointer',
+                position: 'relative'
+              }}
+            >
+              Chat
+              {hasUnread && viewMode !== 'chat' && (
+                <span style={{
+                  position: 'absolute',
+                  top: -5,
+                  right: -5,
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontSize: 10,
+                  padding: '2px 6px',
+                  borderRadius: 10,
+                  fontWeight: 'bold'
+                }}>New</span>
+              )}
+            </button>
+          </div>
         </header>
 
-        <UrgentAnnouncements contextId={Number(id)} contextType="turniej" canPost={isOrganizer} />
+        {viewMode === 'home' && (
+          <>
+            <UrgentAnnouncements contextId={Number(id)} contextType="turniej" canPost={isOrganizer} />
 
         {/* Detail grid: left image, right meta + register */}
         <section className="detail-grid">
@@ -1011,9 +1122,11 @@ export default function TournamentDetail() {
                 <option value="">Wybierz drużynę…</option>
                 {(() => {
                   const existingOwners = new Set<string>(([...accepted, ...pending] as any[]).map((z) => z.user_id))
+                  // void existingOwners to suppress unused warning while keeping the logic available for revert
+                  void existingOwners
                   const filtered = allTeams
                     .filter((t) => !teamSearch || (t.nazwa_druzyny || '').toLowerCase().includes(teamSearch.toLowerCase()))
-                    .filter((t) => !existingOwners.has(t.owner_id))
+                    // .filter((t) => !existingOwners.has(t.owner_id))
                     .slice(0, 200)
                   return filtered.map((t) => (
                     <option key={t.druzyna_id} value={t.druzyna_id}>{t.nazwa_druzyny}</option>
@@ -1022,7 +1135,7 @@ export default function TournamentDetail() {
               </select>
               <button onClick={addTeamAsAdmin} style={{ padding: '8px 12px', background: '#2ecc71', border: 'none', borderRadius: 6 }}>Dodaj drużynę</button>
             </div>
-            <div style={{ marginTop: 8, fontSize: 12, color: '#9fb3c8' }}>Ukryto drużyny, których właściciel ma już zgłoszenie do tego turnieju.</div>
+            {/* <div style={{ marginTop: 8, fontSize: 12, color: '#9fb3c8' }}>Ukryto drużyny, których właściciel ma już zgłoszenie do tego turnieju.</div> */}
           </section>
         )}
 
@@ -1060,12 +1173,29 @@ export default function TournamentDetail() {
           ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 12, marginTop: 12 }}>
-                {(showAllTeams ? accepted : accepted.slice(0, 6)).map((entry) => (
-                  <div key={entry.zapis_id} style={{ textAlign: 'center' }}>
-                    {entry.team?.logo ? <img src={getLogoSrc(entry.team.logo) || undefined} alt={entry.nazwa_druzyny} style={{ width: 80, height: 80, objectFit: 'contain' }} /> : <div style={{ width: 80, height: 80, background: '#071013' }} />}
-                    <div style={{ marginTop: 8 }}>{entry.nazwa_druzyny}</div>
-                  </div>
-                ))}
+                {(showAllTeams ? accepted : accepted.slice(0, 6)).map((entry) => {
+                  const content = (
+                    <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ width: 80, height: 80, background: entry.team?.logo_color || 'transparent', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        <TeamLogo 
+                          type={entry.team?.logo || null} 
+                          color={entry.team?.logo_fill_color} 
+                          style={{ width: 64, height: 64 }} 
+                        />
+                      </div>
+                      <div style={{ marginTop: 8 }}>{entry.nazwa_druzyny}</div>
+                    </div>
+                  )
+                  return (
+                    <div key={entry.zapis_id}>
+                      {entry.team?.druzyna_id ? (
+                        <Link to={`/teams/${entry.team.druzyna_id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                          {content}
+                        </Link>
+                      ) : content}
+                    </div>
+                  )
+                })}
               </div>
               {accepted.length > 6 && <div style={{ marginTop: 12 }}><button onClick={() => setShowAllTeams(!showAllTeams)} style={{ padding: '8px 12px', background: '#2b8cff', color: '#001024', border: 'none', borderRadius: 6 }}>{showAllTeams ? 'Pokaż mniej' : 'Pokaż wszystkie drużyny'}</button></div>}
             </>
@@ -1120,15 +1250,18 @@ export default function TournamentDetail() {
                     <button onClick={resetChessRounds} style={{ padding: '6px 10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6 }}>Reset rund (Szachy)</button>
                   </>
                 )}
-                {manageMode && (tournament.format_rozgrywek === 'Liga' || tournament.dyscyplina === 'Szachy') && (
+                {manageMode && (tournament.dyscyplina === 'Szachy') && (
                   <button
                     onClick={saveAllEdits}
                     disabled={Object.keys(edits).length === 0 || !Object.values(edits).some((e: any) => e && (('homeScore' in e) || ('awayScore' in e)))}
                     style={{ padding: '6px 10px', background: '#22c55e', color: '#001024', border: 'none', borderRadius: 6 }}
                   >Zapisz wszystkie</button>
                 )}
-                <button onClick={() => setManageMode((m) => !m)} style={{ padding: '6px 10px', background: manageMode ? '#334155' : '#0ea5e9', color: '#fff', border: 'none', borderRadius: 6 }}>
-                  {manageMode ? 'Zakończ edycję' : 'Zarządzaj'}</button>
+                {(tournament.format_rozgrywek !== 'Liga') && (
+                  <button onClick={() => setManageMode((m) => !m)} style={{ padding: '6px 10px', background: manageMode ? '#334155' : '#0ea5e9', color: '#fff', border: 'none', borderRadius: 6 }}>
+                    {manageMode ? 'Zakończ edycję' : 'Zarządzaj'}
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1161,14 +1294,28 @@ export default function TournamentDetail() {
                 getAllowedTeamsForMatch={(mm: any) => getAllowedTeamsForMatch(matches.find((x) => x.mecz_id === mm.id) || mm)}
                 onBulkSetRoundDate={(round, date, time) => setRoundDate(round, date, time)}
                 onBulkClearRoundDate={(round) => clearRoundDate(round)}
+                onSaveAll={saveAllEdits}
+                canSaveAll={Object.keys(edits).length > 0 && Object.values(edits).some((e: any) => e && (('homeScore' in e) || ('awayScore' in e)))}
+                onToggleManage={() => setManageMode((m) => !m)}
               />
             )
           })()}
         </section>
 
-        {/* Chat Section */}
-        <section style={{ marginTop: 16 }}>
-          <ChatBox contextType="turniej" contextId={Number(id)} canWrite={isParticipant} title="Czat turniejowy" />
+          </>
+        )}
+
+        <section style={{ marginTop: 16, display: viewMode === 'chat' ? 'block' : 'none' }}>
+          <ChatBox 
+            contextType="turniej" 
+            contextId={Number(id)} 
+            canWrite={isParticipant} 
+            title="Czat turniejowy" 
+            isActive={viewMode === 'chat'}
+            onMessageReceived={() => {
+              if (viewMode !== 'chat') setHasUnread(true)
+            }}
+          />
         </section>
       </div>
     </div>
