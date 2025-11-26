@@ -21,6 +21,7 @@ function App() {
   const { isAuthenticated, isLoading, user } = useAuth0()
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('Pilka nozna')
   const [userFullName, setUserFullName] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState<string>('')
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -45,7 +46,12 @@ function App() {
         </div>
 
         <div className="topbar-center">
-          <input className="search" placeholder="Szukaj turniejów..." />
+          <input 
+            className="search" 
+            placeholder="Szukaj turniejów..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <div className="topbar-right">
@@ -78,9 +84,9 @@ function App() {
 
       <main className="page-content">
         <Routes>
-          <Route path="/" element={<TournamentsPage discipline={selectedDiscipline} setDiscipline={setSelectedDiscipline} />} />
+          <Route path="/" element={<TournamentsPage discipline={selectedDiscipline} setDiscipline={setSelectedDiscipline} searchQuery={searchQuery} />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/tournaments" element={<TournamentsPage discipline={selectedDiscipline} setDiscipline={setSelectedDiscipline} />} />
+          <Route path="/tournaments" element={<TournamentsPage discipline={selectedDiscipline} setDiscipline={setSelectedDiscipline} searchQuery={searchQuery} />} />
           <Route path="/tournaments/:id" element={<TournamentDetail />} />
           <Route path="/create-team" element={<CreateTeamPage />} />
           <Route path="/teams" element={<TeamsPage />} />

@@ -19,6 +19,7 @@ type Tournament = {
 type Props = {
   discipline?: string
   setDiscipline?: (d: string) => void
+  searchQuery?: string
 }
 
 export default function TournamentsPage(props: Props) {
@@ -237,7 +238,22 @@ export default function TournamentsPage(props: Props) {
       </div>
 
       {/* Grid: grouped by status when 'all' selected */}
-      {selectedStatus === 'all' ? (
+      {props.searchQuery ? (
+        <>
+          <h3 className="group-title">Wyniki wyszukiwania</h3>
+          <div className="cards-grid">{withMeta.filter((w)=>{
+            const text = ((w.t.wojewodztwo ?? w.t.lokalizacja) || '').toString()
+            const matchesWoj = selectedWoj === 'All' ? true : text.toLowerCase().includes(selectedWoj.toLowerCase())
+            const q = (props.searchQuery || '').toLowerCase()
+            const matchesSearch = (
+              w.t.nazwa.toLowerCase().includes(q) ||
+              (w.t.lokalizacja || '').toLowerCase().includes(q) ||
+              (w.t.wojewodztwo || '').toLowerCase().includes(q)
+            )
+            return w.t.dyscyplina === selectedDiscipline && matchesWoj && matchesSearch
+          }).map(renderCard)}</div>
+        </>
+      ) : selectedStatus === 'all' ? (
         <>
           <h3 className="group-title">Nadchodzące</h3>
           <div className="cards-grid">{withMeta.filter((w)=>{
