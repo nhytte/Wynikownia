@@ -74,54 +74,106 @@ const LeagueTable: React.FC<{ participants: Participant[]; matches: Match[] }> =
   const getParticipant = (id: any) => participants.find((p) => p.id === id)
 
   return (
-    <ScrollBox>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th style={{ textAlign: 'left', padding: 8 }}>Miejsce</th>
-            <th style={{ textAlign: 'left', padding: 8 }}>Nazwa Drużyny</th>
-            <th style={{ padding: 8 }}>M</th>
-            <th style={{ padding: 8 }}>Pkt</th>
-            <th style={{ padding: 8 }}>Z</th>
-            <th style={{ padding: 8 }}>R</th>
-            <th style={{ padding: 8 }}>P</th>
-            <th style={{ padding: 8 }}>Bramki</th>
-            <th style={{ padding: 8 }}>Bilans</th>
-          </tr>
-        </thead>
-        <tbody>
-          {table.map((r, idx) => {
-            const p = getParticipant(r.id)
-            return (
-              <tr key={r.id} style={{ borderTop: '1px solid #eee' }}>
-                <td style={{ padding: 8 }}>{idx + 1}</td>
-                <td style={{ padding: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 24, height: 24, background: p?.logoColor || 'transparent', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                      <TeamLogo type={p?.logo || null} color={p?.logoFillColor} style={{ width: 20, height: 20 }} />
+    <>
+      {/* Desktop View */}
+      <div className="league-table-desktop">
+        <table>
+          <thead>
+            <tr>
+              <th style={{ width: 50, textAlign: 'center' }}>#</th>
+              <th>Drużyna</th>
+              <th style={{ textAlign: 'center' }}>M</th>
+              <th style={{ textAlign: 'center' }}>Z</th>
+              <th style={{ textAlign: 'center' }}>R</th>
+              <th style={{ textAlign: 'center' }}>P</th>
+              <th style={{ textAlign: 'center' }}>Bramki</th>
+              <th style={{ textAlign: 'center' }}>+/-</th>
+              <th style={{ textAlign: 'center' }}>Pkt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {table.map((r, idx) => {
+              const p = getParticipant(r.id)
+              return (
+                <tr key={r.id}>
+                  <td style={{ textAlign: 'center', color: '#94a3b8', fontWeight: 600 }}>{idx + 1}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 24, height: 24, background: p?.logoColor || 'transparent', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                        <TeamLogo type={p?.logo || null} color={p?.logoFillColor} style={{ width: 20, height: 20 }} />
+                      </div>
+                      {p?.teamId ? (
+                        <Link to={`/teams/${p.teamId}`} style={{ color: 'inherit', textDecoration: 'none', fontWeight: 600 }} onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}>
+                          {r.name}
+                        </Link>
+                      ) : (
+                        <span style={{ fontWeight: 600 }}>{r.name}</span>
+                      )}
                     </div>
-                    {p?.teamId ? (
-                      <Link to={`/teams/${p.teamId}`} style={{ color: 'inherit', textDecoration: 'none', fontWeight: 500 }} onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}>
-                        {r.name}
-                      </Link>
-                    ) : (
-                      <span>{r.name}</span>
-                    )}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>{r.M}</td>
+                  <td style={{ textAlign: 'center' }}>{r.Z}</td>
+                  <td style={{ textAlign: 'center' }}>{r.R}</td>
+                  <td style={{ textAlign: 'center' }}>{r.P}</td>
+                  <td style={{ textAlign: 'center' }}>{r.GF}:{r.GA}</td>
+                  <td style={{ textAlign: 'center', color: r.GD > 0 ? '#22c55e' : (r.GD < 0 ? '#ef4444' : '#94a3b8') }}>{r.GD > 0 ? `+${r.GD}` : r.GD}</td>
+                  <td style={{ textAlign: 'center', fontWeight: 800, color: '#3b82f6' }}>{r.Pkt}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile View */}
+      <div className="league-table-mobile">
+        {table.map((r, idx) => {
+          const p = getParticipant(r.id)
+          return (
+            <div key={r.id} className="league-card">
+              <div className="league-card-header">
+                <div className="league-card-pos">{idx + 1}</div>
+                <div className="league-card-team">
+                  <div style={{ width: 24, height: 24, background: p?.logoColor || 'transparent', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                    <TeamLogo type={p?.logo || null} color={p?.logoFillColor} style={{ width: 20, height: 20 }} />
                   </div>
-                </td>
-                <td style={{ padding: 8, textAlign: 'center' }}>{r.M}</td>
-                <td style={{ padding: 8, textAlign: 'center' }}>{r.Pkt}</td>
-                <td style={{ padding: 8, textAlign: 'center' }}>{r.Z}</td>
-                <td style={{ padding: 8, textAlign: 'center' }}>{r.R}</td>
-                <td style={{ padding: 8, textAlign: 'center' }}>{r.P}</td>
-                <td style={{ padding: 8, textAlign: 'center' }}>{r.GF}:{r.GA}</td>
-                <td style={{ padding: 8, textAlign: 'center' }}>{r.GD > 0 ? `+${r.GD}` : r.GD}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </ScrollBox>
+                  {p?.teamId ? (
+                    <Link to={`/teams/${p.teamId}`} style={{ color: 'inherit', textDecoration: 'none' }} onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}>
+                      {r.name}
+                    </Link>
+                  ) : (
+                    <span>{r.name}</span>
+                  )}
+                </div>
+                <div className="league-card-points">{r.Pkt} pkt</div>
+              </div>
+              <div className="league-card-stats">
+                <div className="league-stat-item">
+                  <span className="league-stat-label">Mecze</span>
+                  <span className="league-stat-value">{r.M}</span>
+                </div>
+                <div className="league-stat-item">
+                  <span className="league-stat-label">Z</span>
+                  <span className="league-stat-value">{r.Z}</span>
+                </div>
+                <div className="league-stat-item">
+                  <span className="league-stat-label">R</span>
+                  <span className="league-stat-value">{r.R}</span>
+                </div>
+                <div className="league-stat-item">
+                  <span className="league-stat-label">P</span>
+                  <span className="league-stat-value">{r.P}</span>
+                </div>
+                <div className="league-stat-item">
+                  <span className="league-stat-label">Bramki</span>
+                  <span className="league-stat-value">{r.GF}:{r.GA}</span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )
 }
 
@@ -326,78 +378,106 @@ const SwissView: React.FC<{ standings?: SwissStanding[]; rounds?: SwissRound[] }
     <div style={{ display: 'grid', gap: 12 }}>
       <div>
         <div style={{ fontWeight: 700, marginBottom: 8 }}>Ranking</div>
-        <ScrollBox>
-          {!standings || standings.length === 0 ? (
-            <Empty msg="Brak danych rankingu" />
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left', padding: 8 }}>Miejsce</th>
-                  <th style={{ textAlign: 'left', padding: 8 }}>Tytuł</th>
-                  <th style={{ textAlign: 'left', padding: 8 }}>Gracz</th>
-                  <th style={{ padding: 8 }}>Ranking</th>
-                  <th style={{ padding: 8 }}>Punkty</th>
-                  {/* dynamic tiebreaks */}
-                  {standings[0]?.tiebreaks && Object.keys(standings[0].tiebreaks).map((k) => (
-                    <th key={k} style={{ padding: 8 }}>{k}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((s) => (
-                  <tr key={s.player} style={{ borderTop: '1px solid #eee' }}>
-                    <td style={{ padding: 8 }}>{s.position}</td>
-                    <td style={{ padding: 8 }}>{s.title || ''}</td>
-                    <td style={{ padding: 8 }}>{s.player}</td>
-                    <td style={{ padding: 8, textAlign: 'center' }}>{s.rating ?? ''}</td>
-                    <td style={{ padding: 8, textAlign: 'center' }}>{s.points}</td>
-                    {s.tiebreaks && Object.keys(s.tiebreaks).map((k) => (
-                      <td key={k} style={{ padding: 8, textAlign: 'center' }}>{String(s.tiebreaks![k])}</td>
+        {!standings || standings.length === 0 ? (
+          <Empty msg="Brak danych rankingu" />
+        ) : (
+          <>
+            <div className="league-table-desktop">
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: 8 }}>Miejsce</th>
+                    <th style={{ textAlign: 'left', padding: 8 }}>Tytuł</th>
+                    <th style={{ textAlign: 'left', padding: 8 }}>Gracz</th>
+                    <th style={{ padding: 8 }}>Ranking</th>
+                    <th style={{ padding: 8 }}>Punkty</th>
+                    {standings[0]?.tiebreaks && Object.keys(standings[0].tiebreaks).map((k) => (
+                      <th key={k} style={{ padding: 8 }}>{k}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </ScrollBox>
+                </thead>
+                <tbody>
+                  {standings.map((s) => (
+                    <tr key={s.player}>
+                      <td style={{ padding: 8 }}>{s.position}</td>
+                      <td style={{ padding: 8 }}>{s.title || ''}</td>
+                      <td style={{ padding: 8, fontWeight: 600 }}>{s.player}</td>
+                      <td style={{ padding: 8, textAlign: 'center' }}>{s.rating ?? ''}</td>
+                      <td style={{ padding: 8, textAlign: 'center', fontWeight: 700 }}>{s.points}</td>
+                      {s.tiebreaks && Object.keys(s.tiebreaks).map((k) => (
+                        <td key={k} style={{ padding: 8, textAlign: 'center' }}>{String(s.tiebreaks![k])}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="league-table-mobile">
+               {standings.map((s) => (
+                 <div key={s.player} className="league-card">
+                   <div className="league-card-header">
+                     <div className="league-card-pos">{s.position}</div>
+                     <div className="league-card-team">
+                       {s.title && <span style={{ fontSize: 12, background: '#334155', padding: '2px 4px', borderRadius: 4, marginRight: 4 }}>{s.title}</span>}
+                       {s.player}
+                     </div>
+                     <div className="league-card-points">{s.points} pkt</div>
+                   </div>
+                   <div className="league-card-stats" style={{ gridTemplateColumns: `repeat(${2 + (s.tiebreaks ? Object.keys(s.tiebreaks).length : 0)}, 1fr)` }}>
+                      <div className="league-stat-item">
+                        <span className="league-stat-label">Ranking</span>
+                        <span className="league-stat-value">{s.rating || '-'}</span>
+                      </div>
+                      {s.tiebreaks && Object.keys(s.tiebreaks).map((k) => (
+                        <div key={k} className="league-stat-item">
+                          <span className="league-stat-label">{k}</span>
+                          <span className="league-stat-value">{String(s.tiebreaks![k])}</span>
+                        </div>
+                      ))}
+                   </div>
+                 </div>
+               ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
           <div style={{ fontWeight: 700 }}>Rundy:</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {(rounds || []).map((r) => (
-              <button key={r.round} onClick={() => setActive(r.round)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #e5e7eb', background: active === r.round ? '#eef2ff' : '#fff' }}>Runda {r.round}</button>
+              <button key={r.round} onClick={() => setActive(r.round)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #e5e7eb', background: active === r.round ? '#eef2ff' : '#fff', cursor: 'pointer' }}>Runda {r.round}</button>
             ))}
           </div>
         </div>
-        <ScrollBox>
-          {!rounds || rounds.length === 0 ? (
+        {!rounds || rounds.length === 0 ? (
             <Empty msg="Brak danych rund" />
           ) : (
             (rounds.find((r) => r.round === active)?.pairings || []).length === 0 ? (
               <Empty msg="Brak parowań dla tej rundy" />
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: 8 }}>Para</th>
-                    <th style={{ padding: 8 }}>Wynik</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rounds.find((r) => r.round === active)!.pairings.map((p, idx) => (
-                    <tr key={idx} style={{ borderTop: '1px solid #eee' }}>
-                      <td style={{ padding: 8 }}>{p.white} vs {p.black}</td>
-                      <td style={{ padding: 8, textAlign: 'center' }}>{p.result || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div style={{ display: 'grid', gap: 12 }}>
+                {rounds.find((r) => r.round === active)!.pairings.map((p, idx) => (
+                  <div key={idx} className="match-card">
+                    <div className="match-team home">
+                      <div className="match-team-row">
+                        <div style={{ fontWeight: 600 }}>{p.white}</div>
+                      </div>
+                    </div>
+                    <div className="match-score-container">
+                      <div className="match-score-box" style={{ width: 'auto', padding: '0 12px' }}>{p.result || '-'}</div>
+                    </div>
+                    <div className="match-team away">
+                      <div className="match-team-row">
+                        <div style={{ fontWeight: 600 }}>{p.black}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )
           )}
-        </ScrollBox>
       </div>
     </div>
   )
@@ -437,7 +517,7 @@ const ChessRounds: React.FC<{
     return ''
   }
   return (
-    <ScrollBox>
+    <div>
       {byRound.length === 0 ? (
         <Empty msg="Brak rund" />
       ) : (
@@ -450,23 +530,36 @@ const ChessRounds: React.FC<{
                   const e = edits?.[m.id as number] || {}
                   const isBye = m.awayId == null || m.homeId == null
                   return (
-                    <div key={i} style={{ border: '1px solid #eee', borderRadius: 6, padding: 8, minWidth: 420, display: 'grid', gridTemplateColumns: '1fr max-content 1fr max-content', alignItems: 'center', gap: 8 }}>
-                      <div style={{ textAlign: 'right' }}>{nameOf(m.homeId)}</div>
-                      {editable && !isBye ? (
-                        <select value={currentCombo(m, e)} onChange={(ev) => setResultCombo(m.id as number, ev.target.value)} style={{ padding: 6, border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#111' }}>
-                          <option value="">— wybierz wynik —</option>
-                          <option value="1-0">1 - 0</option>
-                          <option value="0.5-0.5">0.5 - 0.5</option>
-                          <option value="0-1">0 - 1</option>
-                        </select>
-                      ) : (
-                        <div style={{ padding: '6px 8px', border: '1px solid #e5e7eb', borderRadius: 6, textAlign: 'center' }}>
-                          {typeof m.homeScore === 'number' && typeof m.awayScore === 'number' ? `${m.homeScore}-${m.awayScore}` : (isBye ? 'BYE' : '')}
+                    <div key={i} className="match-card">
+                      <div className="match-team home">
+                        <div className="match-team-row">
+                          {nameOf(m.homeId)}
                         </div>
-                      )}
-                      <div>{nameOf(m.awayId)}</div>
+                      </div>
+                      
+                      <div className="match-score-container">
+                        {editable && !isBye ? (
+                          <select value={currentCombo(m, e)} onChange={(ev) => setResultCombo(m.id as number, ev.target.value)} style={{ padding: 6, border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#111' }}>
+                            <option value="">— wybierz wynik —</option>
+                            <option value="1-0">1 - 0</option>
+                            <option value="0.5-0.5">0.5 - 0.5</option>
+                            <option value="0-1">0 - 1</option>
+                          </select>
+                        ) : (
+                          <div className="match-score-box">
+                            {typeof m.homeScore === 'number' && typeof m.awayScore === 'number' ? `${m.homeScore}-${m.awayScore}` : (isBye ? 'BYE' : '')}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="match-team away">
+                        <div className="match-team-row">
+                          {nameOf(m.awayId)}
+                        </div>
+                      </div>
+
                       {editable && !isBye && (
-                        <div style={{ textAlign: 'right' }}>
+                        <div className="match-actions">
                           <button onClick={() => onSaveMatch?.(m)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #e5e7eb' }}>Zapisz</button>
                         </div>
                       )}
@@ -478,7 +571,7 @@ const ChessRounds: React.FC<{
           ))}
         </div>
       )}
-    </ScrollBox>
+    </div>
   )
 }
 
@@ -548,13 +641,13 @@ const LeagueFixtures: React.FC<{
         ))}
       </div>
 
-      <ScrollBox>
+      <div>
         <div style={{ padding: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
             <div style={{ fontWeight: 700, fontSize: 18 }}>Kolejka {round}</div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               {editable && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   <input type="date" id={`round-date-${round}`} style={{ padding: 6, borderRadius: 4, border: '1px solid #ccc', color: '#111' }} />
                   <input type="time" id={`round-time-${round}`} style={{ padding: 6, borderRadius: 4, border: '1px solid #ccc', color: '#111' }} />
                   <button onClick={() => {
@@ -593,21 +686,9 @@ const LeagueFixtures: React.FC<{
               const awayP = getParticipant(m.awayId)
 
               return (
-                <div key={i} style={{ 
-                    border: '1px solid #334155', 
-                    borderRadius: 8, 
-                    padding: 12, 
-                    minWidth: 420, 
-                    display: 'grid', 
-                    gridTemplateColumns: editable ? '1fr max-content max-content max-content 1fr max-content' : '1fr max-content max-content max-content 1fr', 
-                    alignItems: 'center', 
-                    gap: 12,
-                    background: '#1e293b',
-                    color: '#ffffff',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                <div key={i} className="match-card">
+                  <div className="match-team home">
+                    <div className="match-team-row">
                       {homeP?.teamId ? (
                         <Link to={`/teams/${homeP.teamId}`} style={{ fontWeight: 600, fontSize: 15, color: 'inherit', textDecoration: 'none' }} onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}>
                           {homeP.name}
@@ -620,25 +701,27 @@ const LeagueFixtures: React.FC<{
                       </div>
                     </div>
                     {/* @ts-ignore */}
-                    {'date' in m && (m as any).date ? <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{new Date((m as any).date).toLocaleString()}</div> : null}
+                    {'date' in m && (m as any).date ? <div className="match-date">{new Date((m as any).date).toLocaleString()}</div> : null}
                   </div>
                   
-                  {editable ? (
-                    <input type="number" step={1} value={homeScore ?? ''} onChange={(ev) => onEditChange?.(m.id as number, 'homeScore', ev.target.value)} style={{ width: 50, padding: 8, border: '1px solid #ffffff', background: '#0F172A', borderRadius: 6, textAlign: 'center', fontSize: 16, fontWeight: 700, color: '#ffffff' }} />
-                  ) : (
-                    <div style={{ width: 50, padding: 8, border: '1px solid #ffffff', background: '#0F172A', borderRadius: 6, textAlign: 'center', fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{typeof m.homeScore === 'number' ? m.homeScore : '-'}</div>
-                  )}
+                  <div className="match-score-container">
+                    {editable ? (
+                      <input type="number" step={1} value={homeScore ?? ''} onChange={(ev) => onEditChange?.(m.id as number, 'homeScore', ev.target.value)} className="match-score-input" />
+                    ) : (
+                      <div className="match-score-box">{typeof m.homeScore === 'number' ? m.homeScore : '-'}</div>
+                    )}
+                    
+                    <div>:</div>
+                    
+                    {editable ? (
+                      <input type="number" step={1} value={awayScore ?? ''} onChange={(ev) => onEditChange?.(m.id as number, 'awayScore', ev.target.value)} className="match-score-input" />
+                    ) : (
+                      <div className="match-score-box">{typeof m.awayScore === 'number' ? m.awayScore : '-'}</div>
+                    )}
+                  </div>
                   
-                  <div style={{ minWidth: 10, textAlign: 'center', fontWeight: 700, color: '#94a3b8' }}>:</div>
-                  
-                  {editable ? (
-                    <input type="number" step={1} value={awayScore ?? ''} onChange={(ev) => onEditChange?.(m.id as number, 'awayScore', ev.target.value)} style={{ width: 50, padding: 8, border: '1px solid #ffffff', background: '#0F172A', borderRadius: 6, textAlign: 'center', fontSize: 16, fontWeight: 700, color: '#ffffff' }} />
-                  ) : (
-                    <div style={{ width: 50, padding: 8, border: '1px solid #ffffff', background: '#0F172A', borderRadius: 6, textAlign: 'center', fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{typeof m.awayScore === 'number' ? m.awayScore : '-'}</div>
-                  )}
-                  
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}>
+                  <div className="match-team away">
+                    <div className="match-team-row">
                       <div style={{ width: 24, height: 24, background: awayP?.logoColor || 'transparent', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                         <TeamLogo type={awayP?.logo || null} color={awayP?.logoFillColor} style={{ width: 20, height: 20 }} />
                       </div>
@@ -653,7 +736,7 @@ const LeagueFixtures: React.FC<{
                   </div>
                   
                   {editable && (
-                    <div>
+                    <div className="match-actions">
                       <button onClick={() => onSaveMatch?.(m)} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#3b82f6', color: '#fff', cursor: 'pointer', fontSize: 13 }}>Zapisz</button>
                     </div>
                   )}
@@ -699,7 +782,7 @@ const LeagueFixtures: React.FC<{
             </div>
           )}
         </div>
-      </ScrollBox>
+      </div>
     </div>
   )
 }

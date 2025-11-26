@@ -118,7 +118,7 @@ export default function ProfilePage() {
             {combinedTeams.map((t: any) => (
               <Link key={t.druzyna_id} to={`/teams/${t.druzyna_id}`} className="team-row" style={{ textDecoration: 'none' }}>
                 <div className="team-left">
-                  <div className="team-icon" style={{ background: t.logo_color || 'transparent', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <div className="team-icon" style={{ background: t.logo_color || 'transparent', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                     <TeamLogo 
                       type={t.logo} 
                       color={t.logo_fill_color || '#000000'} 
@@ -126,7 +126,7 @@ export default function ProfilePage() {
                       fallbackSrc={getLogoSrc(t.logo || '') || undefined}
                     />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <div className="team-name">{t.nazwa_druzyny}{t.owner_id === (user as any).sub ? ' — Właściciel' : ''}</div>
                     <div className="team-prov">{t.wojewodztwo || ''}{t.wojewodztwo ? ', ' : ''}{t.dyscyplina || ''}</div>
                   </div>

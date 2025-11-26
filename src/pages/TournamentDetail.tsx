@@ -1208,7 +1208,7 @@ export default function TournamentDetail() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ marginTop: 0, marginBottom: 0 }}>Wyniki i przebieg</h3>
             {(isOrganizer || isAdmin) && (
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 {(tournament.dyscyplina === 'Pilka nozna' && tournament.typ_zapisu === 'Drużynowy' && tournament.format_rozgrywek === 'Pucharowy') && (
                   <button onClick={generateBracket} disabled={generating} style={{ padding: '6px 10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: 6 }}>
                     {generating ? 'Generowanie…' : (matches.length ? 'Przebuduj drabinkę' : 'Wygeneruj drabinkę')}

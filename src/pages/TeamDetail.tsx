@@ -503,161 +503,162 @@ export default function TeamDetail() {
             />
           )}
 
-          <div className="panel" style={{ padding: 18 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <div style={{ width: 220, height: 220, background: team.logo_color || '#0b1116', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
-              <TeamLogo 
-                type={team.logo} 
-                color={team.logo_fill_color || '#000000'} 
-                style={{ width: 180, height: 180 }} 
-                fallbackSrc={getLogoSrc(team.logo || '') || undefined}
-              />
-              {isEditing && <EditButton onClick={() => {
-                setTempLogo(team.logo || LOGO_OPTIONS[0].id)
-                setTempLogoColor(team.logo_color || '#ffffff')
-                setTempLogoFillColor(team.logo_fill_color || '#000000')
-                setEditingLogo(true)
-              }} />}
+          <div className="panel" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', gap: 32, marginBottom: 32 }}>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ width: 220, height: 220, background: team.logo_color || '#0b1116', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+                  <TeamLogo 
+                    type={team.logo} 
+                    color={team.logo_fill_color || '#000000'} 
+                    style={{ width: 180, height: 180 }} 
+                    fallbackSrc={getLogoSrc(team.logo || '') || undefined}
+                  />
+                  {isEditing && <EditButton onClick={() => {
+                    setTempLogo(team.logo || LOGO_OPTIONS[0].id)
+                    setTempLogoColor(team.logo_color || '#ffffff')
+                    setTempLogoFillColor(team.logo_fill_color || '#000000')
+                    setEditingLogo(true)
+                  }} />}
+                </div>
+              </div>
+
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                position: 'relative', 
+                border: isEditing ? '1px dashed rgba(255,255,255,0.3)' : '1px solid transparent',
+                borderRadius: 8,
+                padding: 12
+              }}>
+                {editingDesc ? (
+                  <div style={{ width: '100%' }}>
+                    <textarea 
+                      value={tempDesc} 
+                      onChange={(e) => setTempDesc(e.target.value)}
+                      rows={5}
+                      style={{ width: '100%', padding: 8, borderRadius: 4, border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      <button onClick={handleSaveDescription} style={{ padding: '4px 12px', background: '#22C55E', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Zapisz</button>
+                      <button onClick={() => setEditingDesc(false)} style={{ padding: '4px 12px', background: '#666', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Anuluj</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p style={{ color: 'var(--muted)', fontSize: 16, whiteSpace: 'pre-wrap', textAlign: 'center', margin: 0 }}>{team.opis || 'Brak opisu'}</p>
+                    {isEditing && <EditButton onClick={() => {
+                      setTempDesc(team.opis || '')
+                      setEditingDesc(true)
+                    }} />}
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <div style={{ flex: 1, background: '#0f172a', padding: 14, borderRadius: 8, position: 'relative', textAlign: 'center' }}>
+                <div style={{ color: 'var(--muted)', fontSize: 13 }}>Województwo</div>
+                {editingProv ? (
+                  <div style={{ marginTop: 4 }}>
+                    <select 
+                      value={tempProv} 
+                      onChange={(e) => setTempProv(e.target.value)}
+                      style={{ width: '100%', padding: 4, borderRadius: 4, color: '#000' }}
+                    >
+                      <option value="">-- Wybierz --</option>
+                      <option value="Dolnośląskie">Dolnośląskie</option>
+                      <option value="Kujawsko-pomorskie">Kujawsko-pomorskie</option>
+                      <option value="Lubelskie">Lubelskie</option>
+                      <option value="Lubuskie">Lubuskie</option>
+                      <option value="Łódzkie">Łódzkie</option>
+                      <option value="Małopolskie">Małopolskie</option>
+                      <option value="Mazowieckie">Mazowieckie</option>
+                      <option value="Opolskie">Opolskie</option>
+                      <option value="Podkarpackie">Podkarpackie</option>
+                      <option value="Podlaskie">Podlaskie</option>
+                      <option value="Pomorskie">Pomorskie</option>
+                      <option value="Śląskie">Śląskie</option>
+                      <option value="Świętokrzyskie">Świętokrzyskie</option>
+                      <option value="Warmińsko-mazurskie">Warmińsko-mazurskie</option>
+                      <option value="Wielkopolskie">Wielkopolskie</option>
+                      <option value="Zachodniopomorskie">Zachodniopomorskie</option>
+                    </select>
+                    <div style={{ display: 'flex', gap: 4, marginTop: 4, justifyContent: 'center' }}>
+                      <button onClick={handleSaveProvince} style={{ fontSize: 12, padding: '2px 8px', background: '#22C55E', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>OK</button>
+                      <button onClick={() => setEditingProv(false)} style={{ fontSize: 12, padding: '2px 8px', background: '#666', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>X</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ color: '#fff', fontWeight: 700 }}>{team.wojewodztwo || '—'}</div>
+                    {isEditing && <EditButton onClick={() => {
+                      setTempProv(team.wojewodztwo || '')
+                      setEditingProv(true)
+                    }} />}
+                  </>
+                )}
+              </div>
+
+              <div style={{ flex: 1, background: '#0f172a', padding: 14, borderRadius: 8, textAlign: 'center' }}>
+                <div style={{ color: 'var(--muted)', fontSize: 13 }}>Dyscyplina</div>
+                <div style={{ color: '#fff', fontWeight: 700 }}>{team.dyscyplina || '—'}</div>
+              </div>
+
+              <div style={{ flex: 1, background: '#0f172a', padding: 14, borderRadius: 8, textAlign: 'center' }}>
+                <div style={{ color: 'var(--muted)', fontSize: 13 }}>Liczba osób</div>
+                <div style={{ color: '#fff', fontWeight: 700 }}>{members.length}</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                {isAuthenticated && (user as any).sub === team?.owner_id ? (
+                  <>
+                    <button className="td-btn td-danger" onClick={async () => {
+                      if (!confirm('Na pewno chcesz usunąć tę drużynę? Ta operacja usunie również wszystkie powiązane zgłoszenia i członkostwa.')) return
+                      try {
+                        await supabase.from('teammembers').delete().eq('druzyna_id', Number(id))
+                      } catch (e) { console.warn('Could not delete team members', e) }
+                      try {
+                        const { error } = await supabase.from('druzyny').delete().eq('druzyna_id', Number(id))
+                        if (error) throw error
+                        alert('Drużyna została usunięta')
+                        navigate('/teams')
+                      } catch (e) { console.error(e); alert('Usuwanie drużyny nie powiodła się') }
+                    }}>Usuń drużynę</button>
+
+                    <button className={`td-btn ${isEditing ? 'td-ghost' : 'td-edit'}`} onClick={() => {
+                      setIsEditing(!isEditing)
+                      // Reset editing states when toggling off
+                      if (isEditing) {
+                        setEditingDesc(false)
+                        setEditingProv(false)
+                        setEditingLogo(false)
+                      }
+                    }}>
+                      {isEditing ? 'Zakończ edycję' : 'Edytuj'}
+                    </button>
+                  </>
+                ) : isMember ? (
+                  <button className="td-btn td-danger" onClick={async () => {
+                    if (!confirm('Na pewno chcesz opuścić tę drużynę?')) return
+                    try {
+                      const uid = (user as any).sub
+                      const { error } = await supabase.from('teammembers').delete().eq('druzyna_id', Number(id)).eq('user_id', uid)
+                      if (error) throw error
+                      alert('Opuściłeś drużynę')
+                      await fetchDetail()
+                    } catch (e) { console.error(e); alert('Nie udało się opuścić drużyny') }
+                  }}>Opuść drużynę</button>
+                ) : myPendingRequest ? (
+                  <button className="td-btn td-danger" onClick={handleCancelRequest}>Anuluj prośbę</button>
+                ) : (
+                  <button className="td-btn td-blue" onClick={handleJoin}>Dołącz do drużyny</button>
+                )}
+              </div>
             </div>
           </div>
-
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'center', 
-            position: 'relative', 
-            minHeight: 100,
-            border: isEditing ? '1px dashed rgba(255,255,255,0.3)' : '1px solid transparent',
-            borderRadius: 8,
-            padding: 12
-          }}>
-            {editingDesc ? (
-              <div style={{ width: '100%' }}>
-                <textarea 
-                  value={tempDesc} 
-                  onChange={(e) => setTempDesc(e.target.value)}
-                  rows={5}
-                  style={{ width: '100%', padding: 8, borderRadius: 4, border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                />
-                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                  <button onClick={handleSaveDescription} style={{ padding: '4px 12px', background: '#22C55E', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Zapisz</button>
-                  <button onClick={() => setEditingDesc(false)} style={{ padding: '4px 12px', background: '#666', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Anuluj</button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 16, whiteSpace: 'pre-wrap' }}>{team.opis || 'Brak opisu'}</p>
-                {isEditing && <EditButton onClick={() => {
-                  setTempDesc(team.opis || '')
-                  setEditingDesc(true)
-                }} />}
-              </>
-            )}
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 18, alignItems: 'center', textAlign: 'center' }}>
-          <div style={{ background: '#0f172a', padding: 14, borderRadius: 8, position: 'relative' }}>
-            <div style={{ color: 'var(--muted)', fontSize: 13 }}>Województwo</div>
-            {editingProv ? (
-              <div style={{ marginTop: 4 }}>
-                <select 
-                  value={tempProv} 
-                  onChange={(e) => setTempProv(e.target.value)}
-                  style={{ width: '100%', padding: 4, borderRadius: 4, color: '#000' }}
-                >
-                  <option value="">-- Wybierz --</option>
-                  <option value="Dolnośląskie">Dolnośląskie</option>
-                  <option value="Kujawsko-pomorskie">Kujawsko-pomorskie</option>
-                  <option value="Lubelskie">Lubelskie</option>
-                  <option value="Lubuskie">Lubuskie</option>
-                  <option value="Łódzkie">Łódzkie</option>
-                  <option value="Małopolskie">Małopolskie</option>
-                  <option value="Mazowieckie">Mazowieckie</option>
-                  <option value="Opolskie">Opolskie</option>
-                  <option value="Podkarpackie">Podkarpackie</option>
-                  <option value="Podlaskie">Podlaskie</option>
-                  <option value="Pomorskie">Pomorskie</option>
-                  <option value="Śląskie">Śląskie</option>
-                  <option value="Świętokrzyskie">Świętokrzyskie</option>
-                  <option value="Warmińsko-mazurskie">Warmińsko-mazurskie</option>
-                  <option value="Wielkopolskie">Wielkopolskie</option>
-                  <option value="Zachodniopomorskie">Zachodniopomorskie</option>
-                </select>
-                <div style={{ display: 'flex', gap: 4, marginTop: 4, justifyContent: 'center' }}>
-                  <button onClick={handleSaveProvince} style={{ fontSize: 12, padding: '2px 8px', background: '#22C55E', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>OK</button>
-                  <button onClick={() => setEditingProv(false)} style={{ fontSize: 12, padding: '2px 8px', background: '#666', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>X</button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div style={{ color: '#fff', fontWeight: 700 }}>{team.wojewodztwo || '—'}</div>
-                {isEditing && <EditButton onClick={() => {
-                  setTempProv(team.wojewodztwo || '')
-                  setEditingProv(true)
-                }} />}
-              </>
-            )}
-          </div>
-
-          <div style={{ background: '#0f172a', padding: 14, borderRadius: 8 }}>
-            <div style={{ color: 'var(--muted)', fontSize: 13 }}>Dyscyplina</div>
-            <div style={{ color: '#fff', fontWeight: 700 }}>{team.dyscyplina || '—'}</div>
-          </div>
-
-          <div style={{ background: '#0f172a', padding: 14, borderRadius: 8 }}>
-            <div style={{ color: 'var(--muted)', fontSize: 13 }}>Liczba osób</div>
-            <div style={{ color: '#fff', fontWeight: 700 }}>{members.length}</div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            {isAuthenticated && (user as any).sub === team?.owner_id ? (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="td-btn td-danger" onClick={async () => {
-                  if (!confirm('Na pewno chcesz usunąć tę drużynę? Ta operacja usunie również wszystkie powiązane zgłoszenia i członkostwa.')) return
-                  try {
-                    await supabase.from('teammembers').delete().eq('druzyna_id', Number(id))
-                  } catch (e) { console.warn('Could not delete team members', e) }
-                  try {
-                    const { error } = await supabase.from('druzyny').delete().eq('druzyna_id', Number(id))
-                    if (error) throw error
-                    alert('Drużyna została usunięta')
-                    navigate('/teams')
-                  } catch (e) { console.error(e); alert('Usuwanie drużyny nie powiodła się') }
-                }}>Usuń drużynę</button>
-
-                <button className={`td-btn ${isEditing ? 'td-ghost' : 'td-edit'}`} onClick={() => {
-                  setIsEditing(!isEditing)
-                  // Reset editing states when toggling off
-                  if (isEditing) {
-                    setEditingDesc(false)
-                    setEditingProv(false)
-                    setEditingLogo(false)
-                  }
-                }}>
-                  {isEditing ? 'Zakończ edycję' : 'Edytuj'}
-                </button>
-              </div>
-            ) : isMember ? (
-              <button className="td-btn td-danger" onClick={async () => {
-                if (!confirm('Na pewno chcesz opuścić tę drużynę?')) return
-                try {
-                  const uid = (user as any).sub
-                  const { error } = await supabase.from('teammembers').delete().eq('druzyna_id', Number(id)).eq('user_id', uid)
-                  if (error) throw error
-                  alert('Opuściłeś drużynę')
-                  await fetchDetail()
-                } catch (e) { console.error(e); alert('Nie udało się opuścić drużyny') }
-              }}>Opuść drużynę</button>
-            ) : myPendingRequest ? (
-              <button className="td-btn td-danger" onClick={handleCancelRequest}>Anuluj prośbę</button>
-            ) : (
-              <button className="td-btn td-blue" onClick={handleJoin}>Dołącz do drużyny</button>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Logo Edit Modal */}
       {editingLogo && (

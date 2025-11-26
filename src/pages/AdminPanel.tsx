@@ -320,8 +320,8 @@ export default function AdminPanel() {
             <div style={{ display: 'grid', gap: 8 }}>
               {teams.map(t => (
                 <div key={t.druzyna_id} className="tournament-row">
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div style={{ width: 44, height: 44, background: t.logo_color || 'transparent', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', minWidth: 200 }}>
+                    <div style={{ width: 44, height: 44, background: t.logo_color || 'transparent', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                       <TeamLogo 
                         type={t.logo || null} 
                         color={t.logo_fill_color || '#000000'} 
@@ -329,10 +329,14 @@ export default function AdminPanel() {
                         fallbackSrc={t.logo?.startsWith('http') || t.logo?.startsWith('/') ? t.logo : undefined}
                       />
                     </div>
-                    <div className="tournament-left">{t.nazwa_druzyny}</div>
+                    <div className="tournament-left" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.nazwa_druzyny}</div>
                   </div>
-                  <div className="tournament-mid">{t.dyscyplina}</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  
+                  <div style={{ flex: 1, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                    {t.dyscyplina}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'flex-end', minWidth: 160 }}>
                     <button className="td-btn td-edit" onClick={() => openTeamDetails(t)}>Przejrzyj</button>
                     <button className="td-btn td-danger" onClick={() => deleteTeam(t.druzyna_id)}>Usuń</button>
                   </div>
@@ -350,7 +354,7 @@ export default function AdminPanel() {
               <button onClick={() => setViewingTeam(null)} style={{ padding: '6px 10px' }}>Zamknij</button>
             </div>
             <div style={{ padding: 16, display: 'grid', gap: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 10 }}>
+              <div className="modal-grid">
                 <div style={{ fontWeight: 600 }}>Nazwa</div>
                 <div>{viewingTeam.nazwa_druzyny || '-'}</div>
 
@@ -409,7 +413,7 @@ export default function AdminPanel() {
               <button onClick={() => setViewingTournament(null)} style={{ padding: '6px 10px' }}>Zamknij</button>
             </div>
             <div style={{ padding: 16, display: 'grid', gap: 10 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 10 }}>
+              <div className="modal-grid">
                 <div style={{ fontWeight: 600 }}>Nazwa</div>
                 <div>{viewingTournament.nazwa || '-'}</div>
 
@@ -470,12 +474,16 @@ export default function AdminPanel() {
             <div style={{ display: 'grid', gap: 8 }}>
               {users.map(u => (
                 <div key={u.user_id} className="tournament-row">
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nazwa_wyswietlana || ((u.imie || u.nazwisko) ? `${u.imie ?? ''} ${u.nazwisko ?? ''}`.trim() : '') || emailLocal(u.email) || u.user_id}</div>
-                    <div className="tournament-mid" style={{ color: 'var(--muted)', fontSize: 13 }}>{u.email}</div>
+                  <div style={{ fontWeight: 700, minWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {u.nazwa_wyswietlana || ((u.imie || u.nazwisko) ? `${u.imie ?? ''} ${u.nazwisko ?? ''}`.trim() : '') || emailLocal(u.email) || u.user_id}
                   </div>
-                  <div className="tournament-mid">{u.rola}</div>
-                  <div>
+                  
+                  <div style={{ flex: 1, textAlign: 'center', color: 'var(--muted)', fontSize: 13, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {u.email}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center', minWidth: 200, justifyContent: 'flex-end' }}>
+                    <div style={{ color: 'var(--muted)', fontSize: 13 }}>{u.rola}</div>
                     <button className="td-btn td-danger" onClick={() => deleteUser(u.user_id)}>Usuń</button>
                   </div>
                 </div>
@@ -562,7 +570,7 @@ export default function AdminPanel() {
               <button onClick={() => setReviewing(null)} style={{ padding: '6px 10px' }}>Zamknij</button>
             </div>
             <div style={{ padding: 16, display: 'grid', gap: 10 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 10 }}>
+              <div className="modal-grid">
                 <div style={{ fontWeight: 600 }}>Nazwa</div>
                 <div>{reviewing.sugerowana_nazwa || '-'}</div>
 

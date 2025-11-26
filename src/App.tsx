@@ -22,6 +22,7 @@ function App() {
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('Pilka nozna')
   const [userFullName, setUserFullName] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -56,17 +57,30 @@ function App() {
 
         <div className="topbar-right">
           <NotificationBox />
-          {isLoading ? (
-            <span className="small-muted">Loading...</span>
-          ) : isAuthenticated ? (
-            <>
-              <Link to="/create-team"><button className="ghost">Stwórz drużynę</button></Link>
-              <Link to="/teams"><button className="ghost">Znajdź drużynę</button></Link>
-              <Link to="/profile"><button className="ghost">{userFullName || (user as any)?.name || emailLocal((user as any)?.email)}</button></Link>
-            </>
-          ) : (
-            <Link to="/login"><button className="primary">Zaloguj się</button></Link>
-          )}
+          
+          <div className={`nav-links ${isMenuOpen ? 'open' : ''}`}>
+            <input 
+              className="search mobile-search" 
+              placeholder="Szukaj turniejów..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {isLoading ? (
+              <span className="small-muted">Loading...</span>
+            ) : isAuthenticated ? (
+              <>
+                <Link to="/create-team" onClick={() => setIsMenuOpen(false)}><button className="ghost">Stwórz drużynę</button></Link>
+                <Link to="/teams" onClick={() => setIsMenuOpen(false)}><button className="ghost">Znajdź drużynę</button></Link>
+                <Link to="/profile" onClick={() => setIsMenuOpen(false)}><button className="ghost">{userFullName || (user as any)?.name || emailLocal((user as any)?.email)}</button></Link>
+              </>
+            ) : (
+              <Link to="/login" onClick={() => setIsMenuOpen(false)}><button className="primary">Zaloguj się</button></Link>
+            )}
+          </div>
+
+          <button className="hamburger-btn" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Menu">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
         </div>
 
       </header>

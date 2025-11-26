@@ -144,7 +144,7 @@ export default function CreateTeamPage() {
           </div>
         </label>
 
-        <div style={{ display: 'flex', gap: 20 }}>
+        <div className="form-row-2">
           <label>
             Kolor tła logo
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>

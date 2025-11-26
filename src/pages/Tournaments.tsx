@@ -200,7 +200,7 @@ export default function TournamentsPage(props: Props) {
     <div className="page-section">
       {/* Filters (province + status) centered — discipline buttons moved into navbar */}
       <div className="filters-center" style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className="filters-row">
           <div className="province-block">Województwo:&nbsp;
             <select value={selectedWoj} onChange={(e) => setSelectedWoj(e.target.value)} style={{ marginLeft: 8, borderRadius: 6, padding: '6px 8px', background: '#fff', color: '#000', border: '1px solid rgba(0,0,0,0.06)' }}>
               <option value="All">All</option>
@@ -223,11 +223,11 @@ export default function TournamentsPage(props: Props) {
             </select>
           </div>
 
-          <div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
             <button className={selectedStatus === 'all' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('all')}>Wszystkie</button>
-            <button className={selectedStatus === 'upcoming' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('upcoming')} style={{ marginLeft: 8 }}>Nadchodzące</button>
-            <button className={selectedStatus === 'ongoing' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('ongoing')} style={{ marginLeft: 8 }}>W trakcie</button>
-            <button className={selectedStatus === 'finished' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('finished')} style={{ marginLeft: 8 }}>Zakończone</button>
+            <button className={selectedStatus === 'upcoming' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('upcoming')}>Nadchodzące</button>
+            <button className={selectedStatus === 'ongoing' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('ongoing')}>W trakcie</button>
+            <button className={selectedStatus === 'finished' ? 'status-btn status-active' : 'status-btn'} onClick={() => setSelectedStatus('finished')}>Zakończone</button>
           </div>
         </div>
       </div>

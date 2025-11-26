@@ -226,7 +226,7 @@ export default function CreateTournament() {
           <input type="date" value={dataRozp} onChange={(e) => setDataRozp(e.target.value)} style={{ width: '100%', padding: 8 }} />
         </label>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="form-row-2">
           <label>
             Godzina rozpoczęcia
             <input type="time" value={czasRozp} onChange={(e) => setCzasRozp(e.target.value)} style={{ width: '100%', padding: 8 }} />
